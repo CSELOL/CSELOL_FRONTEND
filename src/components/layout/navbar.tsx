@@ -2,6 +2,7 @@
 import * as React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, Zap } from "lucide-react";
+import { Trophy } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -40,7 +41,7 @@ export function Navbar({ className }: NavbarProps) {
           className="flex items-center gap-2 hover:opacity-80 transition-opacity"
         >
           <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Zap className="h-4 w-4 fill-current" />
+            <Trophy className="h-4 w-4 fill-current" />
           </div>
           <span className="text-lg font-semibold tracking-tight text-foreground">
             CSELOL

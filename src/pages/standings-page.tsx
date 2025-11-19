@@ -1,6 +1,6 @@
 // src/pages/standings-page.tsx
 import * as React from "react";
-import { ChevronDown, Trophy, History, Calendar } from "lucide-react";
+import { Trophy, History, Calendar } from "lucide-react";
 import {
   Select,
   SelectContent,
