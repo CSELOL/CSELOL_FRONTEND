@@ -31,6 +31,7 @@ import { SponsorsSection } from "./components/landing/sponsors-section";
 import { ContactPage } from "./pages/public/contact-page";
 import { CommunitySection } from "./components/landing/community-section";
 import { HistoryTeaser } from "./components/landing/history-teaser";
+import { DashboardTournamentsPage } from "./components/dashboard/dashboard-tournaments-page";
 
 // Helper Layout
 const PublicLayout = () => {
@@ -78,6 +79,7 @@ function App() {
               {/* Player Routes */}
               <Route index element={<DashboardPage />} />
               <Route path="team" element={<MyTeamPage />} />
+              <Route path="tournaments" element={<DashboardTournamentsPage />} />
               <Route path="matches" element={<PlayerMatchesPage />} />
               <Route path="settings" element={<SettingsPage />} />
 

@@ -13,8 +13,10 @@ import { cn } from "@/lib/utils";
 const playerItems = [
   { title: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { title: "My Team", href: "/dashboard/team", icon: Users },
+  {title: "Find Tournaments", href: "/dashboard/tournaments", icon: Trophy},
   { title: "Matches", href: "/dashboard/matches", icon: Swords },
   { title: "Settings", href: "/dashboard/settings", icon: Settings },
+  
 ];
 
 const adminItems = [
