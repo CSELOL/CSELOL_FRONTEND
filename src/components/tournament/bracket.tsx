@@ -1,4 +1,4 @@
-import * as React from "react";
+// import * as React from "react";
 import { Trophy, Swords, Crown, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -217,7 +217,7 @@ export function Bracket() {
               <h3 className="text-center text-sm font-bold uppercase tracking-widest text-zinc-500">
                 Quarterfinals
               </h3>
-              {tournamentData[0].matches.map((match, i) => (
+              {tournamentData[0].matches.map((match) => (
                 <div key={match.id} className="relative flex items-center">
                   <MatchCard match={match} />
                   {/* Connector Line (Right) */}

@@ -12,6 +12,14 @@ export const publicNavItems: NavItem[] = [
     href: "/",
   },
   {
+    title: "Nossa História",
+    href: "/history",
+  },
+  {
+    title: "Apoiadores",
+    href: "/sponsors",
+  },
+  {
     title: "Tabela",
     href: "/standings",
   },

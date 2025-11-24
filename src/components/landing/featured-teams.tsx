@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Trophy, Users, TrendingUp, Swords, Plus } from "lucide-react";
+import { Users, TrendingUp, Swords, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 

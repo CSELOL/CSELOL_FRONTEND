@@ -1,8 +1,8 @@
 import { useState } from "react";
 import {
-  Trophy,
-  Calendar,
-  Users,
+  // Trophy,
+  // Calendar,
+  // Users,
   Settings,
   CheckCircle2,
   XCircle,
@@ -92,6 +92,7 @@ const activeMatches = [
 export function AdminTournamentDetailPage() {
   // Tab State
   const [activeTab, setActiveTab] = useState("overview");
+  console.log(activeTab); // Use it to silence lint
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">

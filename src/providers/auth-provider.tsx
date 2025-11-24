@@ -1,7 +1,7 @@
 // src/providers/auth-provider.tsx
 import React, { createContext, useContext, useEffect, useState } from "react";
 import keycloak from "@/lib/keycloak";
-import type Keycloak from "keycloak-js";
+// import type Keycloak from "keycloak-js";
 import { Loader2 } from "lucide-react";
 
 interface AuthContextType {

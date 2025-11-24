@@ -1,5 +1,5 @@
 import { Zap, Star, Heart, Shield } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 export function SponsorsPage() {

@@ -3,8 +3,6 @@ import {
   User,
   Gamepad2,
   Bell,
-  Shield,
-  Save,
   Loader2,
   AlertCircle,
   CheckCircle2,
@@ -13,8 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -213,10 +209,10 @@ export function SettingsPage() {
               <Button
                 onClick={onSave}
                 disabled={isLoading}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                className="bg-primary text-primary-foreground font-bold"
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Update Riot ID
+                Save Changes
               </Button>
             </CardFooter>
           </Card>
@@ -226,49 +222,36 @@ export function SettingsPage() {
         <TabsContent value="notifications" className="mt-6">
           <Card className="bg-zinc-900/50 border-white/10">
             <CardHeader>
-              <CardTitle className="text-white">Email Preferences</CardTitle>
+              <CardTitle className="text-white">
+                Notification Preferences
+              </CardTitle>
               <CardDescription>
-                Choose which updates you want to receive.
+                Choose what you want to be notified about.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label className="text-white">Match Reminders</Label>
+                  <Label className="text-base text-zinc-200">
+                    Match Reminders
+                  </Label>
                   <p className="text-xs text-zinc-500">
-                    Receive emails 1 hour before your scheduled match.
+                    Receive alerts 15 minutes before your match starts.
                   </p>
                 </div>
-                <Switch
-                  defaultChecked
-                  className="data-[state=checked]:bg-primary"
-                />
+                {/* Switch component would go here */}
+                <div className="h-6 w-10 bg-primary rounded-full" />
               </div>
-              <Separator className="bg-white/5" />
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label className="text-white">Tournament Announcements</Label>
+                  <Label className="text-base text-zinc-200">
+                    Team Invites
+                  </Label>
                   <p className="text-xs text-zinc-500">
-                    News about new seasons and community cups.
+                    Get notified when someone invites you to a team.
                   </p>
                 </div>
-                <Switch
-                  defaultChecked
-                  className="data-[state=checked]:bg-primary"
-                />
-              </div>
-              <Separator className="bg-white/5" />
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-white">Team Invites</Label>
-                  <p className="text-xs text-zinc-500">
-                    When a captain invites you to a roster.
-                  </p>
-                </div>
-                <Switch
-                  defaultChecked
-                  className="data-[state=checked]:bg-primary"
-                />
+                <div className="h-6 w-10 bg-primary rounded-full" />
               </div>
             </CardContent>
           </Card>

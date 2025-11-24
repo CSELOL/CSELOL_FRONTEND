@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import {
   Trophy,
   Users,
-  Activity,
+  // Activity,
   ChevronRight,
   PlayCircle,
 } from "lucide-react";

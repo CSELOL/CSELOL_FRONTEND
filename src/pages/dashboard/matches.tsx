@@ -1,22 +1,14 @@
 import {
   Calendar,
-  Clock,
   Swords,
-  MapPin,
   AlertCircle,
   CheckCircle2,
-  ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 
 const upcomingMatches = [
@@ -223,39 +215,18 @@ export function PlayerMatchesPage() {
                     )}
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`font-bold ${
-                          match.result === "Victory"
-                            ? "text-emerald-400"
-                            : "text-red-400"
-                        }`}
-                      >
-                        {match.result}
-                      </span>
-                      <span className="text-zinc-600">•</span>
-                      <span className="text-white font-bold">
-                        {match.score}
-                      </span>
-                      <span className="text-zinc-600">•</span>
-                      <span className="text-zinc-400 text-sm">
-                        vs {match.opponent}
-                      </span>
+                    <div className="font-bold text-white">
+                      {match.result} vs {match.opponentTag}
                     </div>
-                    <div className="text-xs text-zinc-500 flex gap-2 mt-1">
-                      <span>{match.date}</span>
-                      <span className="text-zinc-700">|</span>
-                      <span>My KDA: {match.kda}</span>
-                    </div>
+                    <div className="text-xs text-zinc-500">{match.date}</div>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-zinc-400 hover:text-white"
-                >
-                  Details
-                </Button>
+                <div className="text-right">
+                  <div className="font-mono font-bold text-white">
+                    {match.score}
+                  </div>
+                  <div className="text-xs text-zinc-500">KDA: {match.kda}</div>
+                </div>
               </div>
             ))}
           </div>
