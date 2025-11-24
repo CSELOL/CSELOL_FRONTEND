@@ -22,9 +22,7 @@ import { PlayerMatchesPage } from "./pages/dashboard/matches";
 import { SettingsPage } from "./pages/dashboard/settings";
 
 // Admin Components
-import { AdminTournamentDetailPage } from "./pages/admin/tournaments/detail";
 import { AdminOverviewPage } from "./pages/admin/overview";
-import { AdminTournamentsList } from "./pages/admin/tournaments/list";
 import { HistoryPage } from "./pages/public/history-page";
 import { TeamsListPage } from "./pages/public/teams-list-page";
 import { SponsorsSection } from "./components/landing/sponsors-section";
@@ -86,11 +84,11 @@ function App() {
               {/* Admin Routes (Nested under /dashboard/admin) */}
               <Route path="admin">
                 <Route index element={<AdminOverviewPage />} />
-                <Route path="tournaments" element={<AdminTournamentsList />} />
+                {/* <Route path="tournaments" element={<AdminTournamentsPage />} />
                 <Route
                   path="tournaments/:id"
                   element={<AdminTournamentDetailPage />}
-                />
+                /> */}
                 <Route
                   path="users"
                   element={
