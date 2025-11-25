@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 export function SponsorsPage() {
   return (
     <div className="min-h-screen bg-background pt-24 pb-20">
-      <div className="container max-w-6xl px-4">
+      <div className="container max-w-6xl px-4 mx-auto">
         {/* Header */}
         <div className="text-center mb-16 space-y-4">
           <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight uppercase">

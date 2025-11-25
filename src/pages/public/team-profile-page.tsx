@@ -31,7 +31,7 @@ export function TeamProfilePage() {
   return (
     <div className="min-h-screen bg-background pt-24 pb-20">
       {/* --- Hero Banner --- */}
-      <div className="container max-w-6xl px-4">
+      <div className="container max-w-6xl px-4 mx-auto">
         <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-card/50 p-8 md:p-12 backdrop-blur-sm">
           {/* Background Blur */}
           <div className="absolute top-0 right-0 h-[500px] w-[500px] rounded-full bg-primary/10 blur-[120px] -translate-y-1/2 translate-x-1/2" />

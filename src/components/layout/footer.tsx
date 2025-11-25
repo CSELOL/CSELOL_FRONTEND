@@ -4,7 +4,7 @@ import { Zap, Twitter, Twitch, Youtube, Instagram } from "lucide-react";
 export function Footer() {
   return (
     <footer className="border-t border-white/5 bg-black py-12">
-      <div className="container max-w-6xl px-4 md:px-6">
+      <div className="container max-w-6xl px-4 md:px-6 mx-auto">
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand Column */}
           <div className="space-y-4">
