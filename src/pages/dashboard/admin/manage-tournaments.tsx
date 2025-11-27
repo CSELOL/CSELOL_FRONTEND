@@ -11,7 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CreateTournamentDialog } from "@/components/dashboard/create-tournament-dialog";
+import { CreateTournamentDialog } from "@/components/dashboard/admin/create-tournament-dialog";
 
 // Mock Data
 const tournaments = [

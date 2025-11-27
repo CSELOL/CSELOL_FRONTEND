@@ -15,21 +15,24 @@ import { PublicTournamentsPage } from "./pages/public/tournaments-page";
 import { SponsorsPage } from "./pages/public/sponsors-page";
 
 // Dashboard Components
-import { DashboardLayout } from "./components/dashboard/dashboard-layout";
+import { DashboardLayout } from "./components/layout/dashboard-layout";
 import { DashboardPage } from "./pages/dashboard/overview";
 import { MyTeamPage } from "./pages/dashboard/my-team";
 import { PlayerMatchesPage } from "./pages/dashboard/matches";
 import { SettingsPage } from "./pages/dashboard/settings";
 
 // Admin Components
-import { AdminOverviewPage } from "./pages/admin/overview";
+import { AdminOverviewPage } from "./pages/dashboard/admin/overview";
+import { AdminTournamentsPage } from "./pages/dashboard/admin/manage-tournaments";
+import { UserManagementPage } from "./pages/dashboard/admin/user-management";
+import { SystemSettingsPage } from "./pages/dashboard/admin/system-settings";
 import { HistoryPage } from "./pages/public/history-page";
 import { TeamsListPage } from "./pages/public/teams-list-page";
 import { SponsorsSection } from "./components/landing/sponsors-section";
 import { ContactPage } from "./pages/public/contact-page";
 import { CommunitySection } from "./components/landing/community-section";
 import { HistoryTeaser } from "./components/landing/history-teaser";
-import { DashboardTournamentsPage } from "./components/dashboard/dashboard-tournaments-page";
+import { DashboardTournamentsPage } from "./pages/dashboard/find-tournaments";
 
 // Helper Layout
 const PublicLayout = () => {
@@ -57,8 +60,8 @@ function App() {
                   <>
                     <Hero />
                     <MatchesSection />
-                    <CommunitySection/>
-                    <HistoryTeaser/>
+                    <CommunitySection />
+                    <HistoryTeaser />
                     <SponsorsSection />
                   </>
                 }
@@ -77,34 +80,19 @@ function App() {
               {/* Player Routes */}
               <Route index element={<DashboardPage />} />
               <Route path="team" element={<MyTeamPage />} />
-              <Route path="tournaments" element={<DashboardTournamentsPage />} />
+              <Route
+                path="tournaments"
+                element={<DashboardTournamentsPage />}
+              />
               <Route path="matches" element={<PlayerMatchesPage />} />
               <Route path="settings" element={<SettingsPage />} />
-
+              
               {/* Admin Routes (Nested under /dashboard/admin) */}
               <Route path="admin">
                 <Route index element={<AdminOverviewPage />} />
-                {/* <Route path="tournaments" element={<AdminTournamentsPage />} />
-                <Route
-                  path="tournaments/:id"
-                  element={<AdminTournamentDetailPage />}
-                /> */}
-                <Route
-                  path="users"
-                  element={
-                    <h1 className="text-white">
-                      User Management (Coming Soon)
-                    </h1>
-                  }
-                />
-                <Route
-                  path="settings"
-                  element={
-                    <h1 className="text-white">
-                      System Settings (Coming Soon)
-                    </h1>
-                  }
-                />
+                <Route path="tournaments" element={<AdminTournamentsPage />} />
+                <Route path="users" element={<UserManagementPage />} />
+                <Route path="settings" element={<SystemSettingsPage />} />
               </Route>
             </Route>
           </Routes>
