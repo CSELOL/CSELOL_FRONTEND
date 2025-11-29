@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 const tournaments = [
   {
@@ -45,10 +46,41 @@ const tournaments = [
   },
 ];
 
+// 1. Define what a Tournament looks like
+interface Tournament {
+  id: string;
+  name: string;
+  status: string;
+  img: string;
+  date: string;
+  prize: string;
+  slots: string;
+  minRank: string;
+}
+
 export function PublicTournamentsPage() {
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // FETCH FROM API
+  useEffect(() => {
+    fetch("http://localhost:3333/api/tournaments")
+      .then((res) => res.json())
+      .then((data) => {
+        setTournaments(data);
+        setLoading(false);
+      })
+      .catch((err) => console.error(err));
+  }, []);
+
+  if (loading)
+    return (
+      <div className="text-white pt-24 text-center">Loading Tournaments...</div>
+    );
+
   return (
     <div className="min-h-screen bg-background pt-24 pb-20">
-      <div className="container max-w-6xl px-4 mx-auto">
+      <div className="container max-w-6xl px-4 mx-autoaaa">
         <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-4">
           <div>
             <h1 className="text-4xl font-bold text-white mb-2">Tournaments</h1>
