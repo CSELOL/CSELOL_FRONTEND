@@ -2,16 +2,17 @@ import * as React from "react";
 import {
   Trophy,
   Calendar,
-  Users,
-  ScrollText,
-  DollarSign,
-  Save,
   Loader2,
+  Image,
+  Globe,
+  Shield,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -27,39 +28,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
 import { createTournamentAPI } from "@/api/tournaments";
 
 interface CreateTournamentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
 }
 
 export function CreateTournamentDialog({
   open,
   onOpenChange,
+  onSuccess,
 }: CreateTournamentDialogProps) {
   const [isLoading, setIsLoading] = React.useState(false);
 
-  // Form State
+  // State matches your DB Schema
   const [formData, setFormData] = React.useState({
-    name: "",
-    season: "Season 5",
-    description: "",
-    format: "Single Elimination",
-    teamSize: "5",
-    maxTeams: "16",
-    startDate: "",
-    regCloseDate: "",
-    prizePool: "",
-    entryFee: "0",
-    minRank: "Unranked",
-    rulesUrl: "",
-    isPublic: false,
+    tournament_name: "",
+    tournament_description: "",
+    start_date: "",
+    banner_url: "",
+    logo_url: "",
+    format: "single_elimination",
+    has_lower_bracket: false,
+    is_listed: true,
+    allow_signups: true,
   });
 
-  const handleChange = (field: string, value: string | boolean) => {
+  const handleChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -68,38 +65,33 @@ export function CreateTournamentDialog({
     setIsLoading(true);
 
     try {
-      // Ajustar dados para o payload REAL do backend
+      // 1. Prepare Payload matching your Database Columns exactly
       const payload = {
-        name: formData.name,
-        description: formData.description,
-        organizer_id: null, // funciona como você falou
-        start_date: formData.startDate || null,
-        end_date: formData.regCloseDate || null,
-        timezone: "America/Sao_Paulo", // default
-        status: "scheduled",
-        max_teams: Number(formData.maxTeams),
-        // campos extras do seu form que o backend NÃO usa:
-        season: formData.season,
+        tournament_name: formData.tournament_name,
+        tournament_description: formData.tournament_description,
+        start_date: formData.start_date
+          ? new Date(formData.start_date).toISOString()
+          : null,
         format: formData.format,
-        team_size: formData.teamSize,
-        prize_pool: formData.prizePool,
-        entry_fee: Number(formData.entryFee),
-        min_rank: formData.minRank,
-        rules_url: formData.rulesUrl,
-        is_public: formData.isPublic,
+        has_lower_bracket: formData.has_lower_bracket,
+        is_listed: formData.is_listed,
+        allow_signups: formData.allow_signups,
+        banner_url: formData.banner_url || null,
+        logo_url: formData.logo_url || null,
+        // Defaults managed by backend or logic:
+        status: "scheduled",
+        is_archived: false,
+        organizer_id: 1, // Replace with actual user ID from Auth context if available
       };
 
+      // 2. Call API
       await createTournamentAPI(payload);
 
       setIsLoading(false);
       onOpenChange(false);
-
-      // notifica o parent para recarregar lista
-      if (typeof (window as any).refreshTournaments === "function") {
-        (window as any).refreshTournaments();
-      }
+      onSuccess();
     } catch (err) {
-      console.error("Erro ao criar torneio:", err);
+      console.error("Error creating tournament:", err);
       setIsLoading(false);
     }
   };
@@ -113,212 +105,142 @@ export function CreateTournamentDialog({
             Create Tournament
           </DialogTitle>
           <DialogDescription className="text-zinc-400">
-            Configure the settings for the new competitive event.
+            Enter the details for the new competitive event.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={onSubmit} className="py-4">
-          <Tabs defaultValue="general" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-zinc-900 border border-white/5 mb-6">
-              <TabsTrigger value="general">General</TabsTrigger>
-              <TabsTrigger value="format">Format</TabsTrigger>
-              <TabsTrigger value="details">Details</TabsTrigger>
-            </TabsList>
+        <form onSubmit={onSubmit} className="py-4 space-y-5">
+          {/* --- NAME & DESCRIPTION --- */}
+          <div className="grid gap-2">
+            <Label className="text-zinc-300">Tournament Name</Label>
+            <Input
+              required
+              placeholder="e.g. CSELOL Season 5"
+              className="bg-zinc-900/50 border-white/10"
+              value={formData.tournament_name}
+              onChange={(e) => handleChange("tournament_name", e.target.value)}
+            />
+          </div>
 
-            {/* --- TAB 1: GENERAL --- */}
-            <TabsContent value="general" className="space-y-4">
-              <div className="grid gap-2">
-                <Label className="text-zinc-300">Tournament Name</Label>
+          <div className="grid gap-2">
+            <Label className="text-zinc-300">Description</Label>
+            <Textarea
+              placeholder="Brief summary..."
+              className="bg-zinc-900/50 border-white/10 resize-none h-20"
+              value={formData.tournament_description}
+              onChange={(e) =>
+                handleChange("tournament_description", e.target.value)
+              }
+            />
+          </div>
+
+          {/* --- DATES & FORMAT --- */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label className="text-zinc-300">Start Date</Label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
                 <Input
-                  placeholder="e.g. Winter Split 2025"
-                  className="bg-zinc-900/50 border-white/10"
-                  value={formData.name}
-                  onChange={(e) => handleChange("name", e.target.value)}
                   required
+                  type="datetime-local"
+                  className="bg-zinc-900/50 border-white/10 pl-9"
+                  value={formData.start_date}
+                  onChange={(e) => handleChange("start_date", e.target.value)}
                 />
               </div>
+            </div>
+            <div className="grid gap-2">
+              <Label className="text-zinc-300">Format</Label>
+              <Select
+                value={formData.format}
+                onValueChange={(v) => handleChange("format", v)}
+              >
+                <SelectTrigger className="bg-zinc-900/50 border-white/10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-white/10 text-white">
+                  <SelectItem value="single_elimination">
+                    Single Elimination
+                  </SelectItem>
+                  <SelectItem value="double_elimination">
+                    Double Elimination
+                  </SelectItem>
+                  <SelectItem value="round_robin">Round Robin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
-              <div className="grid gap-2">
-                <Label className="text-zinc-300">Description (Short)</Label>
-                <Textarea
-                  placeholder="Brief overview for the card display..."
-                  className="bg-zinc-900/50 border-white/10 resize-none"
-                  value={formData.description}
-                  onChange={(e) => handleChange("description", e.target.value)}
+          {/* --- IMAGES --- */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label className="text-zinc-300">Banner URL</Label>
+              <div className="relative">
+                <Image className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+                <Input
+                  placeholder="https://..."
+                  className="bg-zinc-900/50 border-white/10 pl-9"
+                  value={formData.banner_url}
+                  onChange={(e) => handleChange("banner_url", e.target.value)}
                 />
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label className="text-zinc-300">Season / Series</Label>
-                  <Input
-                    placeholder="Season 5"
-                    className="bg-zinc-900/50 border-white/10"
-                    value={formData.season}
-                    onChange={(e) => handleChange("season", e.target.value)}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label className="text-zinc-300">Visibility</Label>
-                  <div className="flex items-center justify-between rounded-md border border-white/10 bg-zinc-900/50 p-3">
-                    <span className="text-sm text-zinc-400">
-                      Publicly Listed
-                    </span>
-                    <Switch
-                      checked={formData.isPublic}
-                      onCheckedChange={(v) => handleChange("isPublic", v)}
-                    />
-                  </div>
-                </div>
+            </div>
+            <div className="grid gap-2">
+              <Label className="text-zinc-300">Logo URL</Label>
+              <div className="relative">
+                <Image className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+                <Input
+                  placeholder="https://..."
+                  className="bg-zinc-900/50 border-white/10 pl-9"
+                  value={formData.logo_url}
+                  onChange={(e) => handleChange("logo_url", e.target.value)}
+                />
               </div>
-            </TabsContent>
+            </div>
+          </div>
 
-            {/* --- TAB 2: FORMAT & SCHEDULE --- */}
-            <TabsContent value="format" className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label className="text-zinc-300">Bracket Type</Label>
-                  <Select
-                    value={formData.format}
-                    onValueChange={(v) => handleChange("format", v)}
-                  >
-                    <SelectTrigger className="bg-zinc-900/50 border-white/10">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-white/10 text-white">
-                      <SelectItem value="Single Elimination">
-                        Single Elimination
-                      </SelectItem>
-                      <SelectItem value="Double Elimination">
-                        Double Elimination
-                      </SelectItem>
-                      <SelectItem value="Round Robin">Round Robin</SelectItem>
-                      <SelectItem value="Swiss">Swiss</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label className="text-zinc-300">Max Teams</Label>
-                  <Select
-                    value={formData.maxTeams}
-                    onValueChange={(v) => handleChange("maxTeams", v)}
-                  >
-                    <SelectTrigger className="bg-zinc-900/50 border-white/10">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-white/10 text-white">
-                      <SelectItem value="8">8 Teams</SelectItem>
-                      <SelectItem value="16">16 Teams</SelectItem>
-                      <SelectItem value="32">32 Teams</SelectItem>
-                      <SelectItem value="64">64 Teams</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+          {/* --- BOOLEAN TOGGLES --- */}
+          <div className="grid gap-4 pt-2">
+            <div className="flex items-center justify-between rounded-md border border-white/10 bg-zinc-900/50 p-3">
+              <div className="flex items-center gap-2">
+                <Globe className="h-4 w-4 text-zinc-400" />
+                <span className="text-sm text-zinc-300">Publicly Listed?</span>
               </div>
+              <Switch
+                checked={formData.is_listed}
+                onCheckedChange={(v) => handleChange("is_listed", v)}
+              />
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label className="text-zinc-300">Start Date</Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
-                    <Input
-                      type="datetime-local"
-                      className="bg-zinc-900/50 border-white/10 pl-9 text-sm"
-                      value={formData.startDate}
-                      onChange={(e) =>
-                        handleChange("startDate", e.target.value)
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="grid gap-2">
-                  <Label className="text-zinc-300">Registration Deadline</Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
-                    <Input
-                      type="datetime-local"
-                      className="bg-zinc-900/50 border-white/10 pl-9 text-sm"
-                      value={formData.regCloseDate}
-                      onChange={(e) =>
-                        handleChange("regCloseDate", e.target.value)
-                      }
-                    />
-                  </div>
-                </div>
+            <div className="flex items-center justify-between rounded-md border border-white/10 bg-zinc-900/50 p-3">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-zinc-400" />
+                <span className="text-sm text-zinc-300">Allow Signups?</span>
               </div>
+              <Switch
+                checked={formData.allow_signups}
+                onCheckedChange={(v) => handleChange("allow_signups", v)}
+              />
+            </div>
 
-              <div className="grid gap-2">
-                <Label className="text-zinc-300">
-                  Minimum Rank Requirement
-                </Label>
-                <Select
-                  value={formData.minRank}
-                  onValueChange={(v) => handleChange("minRank", v)}
-                >
-                  <SelectTrigger className="bg-zinc-900/50 border-white/10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-white/10 text-white">
-                    <SelectItem value="Unranked">Open (Any Rank)</SelectItem>
-                    <SelectItem value="Gold">Gold+</SelectItem>
-                    <SelectItem value="Diamond">Diamond+</SelectItem>
-                    <SelectItem value="Master">Master+</SelectItem>
-                  </SelectContent>
-                </Select>
+            <div className="flex items-center justify-between rounded-md border border-white/10 bg-zinc-900/50 p-3">
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-zinc-400" />
+                <span className="text-sm text-zinc-300">
+                  Has Lower Bracket?
+                </span>
               </div>
-            </TabsContent>
-
-            {/* --- TAB 3: DETAILS & PRIZES --- */}
-            <TabsContent value="details" className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label className="text-zinc-300">Prize Pool (Display)</Label>
-                  <div className="relative">
-                    <Trophy className="absolute left-3 top-2.5 h-4 w-4 text-yellow-500" />
-                    <Input
-                      placeholder="e.g. R$ 5.000"
-                      className="bg-zinc-900/50 border-white/10 pl-9"
-                      value={formData.prizePool}
-                      onChange={(e) =>
-                        handleChange("prizePool", e.target.value)
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="grid gap-2">
-                  <Label className="text-zinc-300">Entry Fee</Label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-emerald-500" />
-                    <Input
-                      type="number"
-                      placeholder="0.00"
-                      className="bg-zinc-900/50 border-white/10 pl-9"
-                      value={formData.entryFee}
-                      onChange={(e) => handleChange("entryFee", e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-2">
-                <Label className="text-zinc-300">Rulebook URL</Label>
-                <div className="relative">
-                  <ScrollText className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
-                  <Input
-                    placeholder="https://docs.google.com/..."
-                    className="bg-zinc-900/50 border-white/10 pl-9"
-                    value={formData.rulesUrl}
-                    onChange={(e) => handleChange("rulesUrl", e.target.value)}
-                  />
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
+              <Switch
+                checked={formData.has_lower_bracket}
+                onCheckedChange={(v) => handleChange("has_lower_bracket", v)}
+              />
+            </div>
+          </div>
 
           <DialogFooter className="mt-6">
             <Button
-              variant="ghost"
               type="button"
+              variant="ghost"
               onClick={() => onOpenChange(false)}
             >
               Cancel
