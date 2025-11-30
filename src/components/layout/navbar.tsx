@@ -36,7 +36,10 @@ export function Navbar({ className }: { className?: string }) {
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 md:px-8">
         {/* --- 1. Logo --- */}
-        <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+        <Link
+          to="/"
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+        >
           <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <Zap className="h-4 w-4 fill-current" />
           </div>
@@ -49,27 +52,30 @@ export function Navbar({ className }: { className?: string }) {
         <div className="hidden md:flex absolute left-1/2 -translate-x-1/2">
           <NavigationMenu>
             <NavigationMenuList>
-              
               {/* Simple Links */}
               <NavigationMenuItem>
-                <Link to="/">
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    Início
-                  </NavigationMenuLink>
-                </Link>
+                <NavigationMenuLink
+                  asChild
+                  className={navigationMenuTriggerStyle()}
+                >
+                  <Link to="/">Início</Link>
+                </NavigationMenuLink>
               </NavigationMenuItem>
-              
+
               <NavigationMenuItem>
-                <Link to="/history">
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    Nossa História
-                  </NavigationMenuLink>
-                </Link>
+                <NavigationMenuLink
+                  asChild
+                  className={navigationMenuTriggerStyle()}
+                >
+                  <Link to="/history">História</Link>
+                </NavigationMenuLink>
               </NavigationMenuItem>
 
               {/* DROPDOWN MENU: COMPETIÇÃO */}
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent">Competição</NavigationMenuTrigger>
+                <NavigationMenuTrigger className="bg-transparent">
+                  Competição
+                </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr] bg-zinc-950 border border-white/10">
                     {/* Featured Item inside Dropdown */}
@@ -84,17 +90,22 @@ export function Navbar({ className }: { className?: string }) {
                             Torneios Ativos
                           </div>
                           <p className="text-sm leading-tight text-zinc-400">
-                            Inscreva-se na Season 5 e participe do circuito oficial.
+                            Inscreva-se na Season 5 e participe do circuito
+                            oficial.
                           </p>
                         </Link>
                       </NavigationMenuLink>
                     </li>
-                    
-                    
+
                     <li>
                       <NavigationMenuLink asChild>
-                        <Link to="/standings" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-white/5 hover:text-primary focus:bg-white/5 focus:text-primary">
-                          <div className="text-sm font-medium text-white leading-none">Tabela</div>
+                        <Link
+                          to="/standings"
+                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-white/5 hover:text-primary focus:bg-white/5 focus:text-primary"
+                        >
+                          <div className="text-sm font-medium text-white leading-none">
+                            Tabela
+                          </div>
                           <p className="line-clamp-2 text-sm leading-snug text-zinc-500">
                             Rankings e pontuações.
                           </p>
@@ -103,8 +114,13 @@ export function Navbar({ className }: { className?: string }) {
                     </li>
                     <li>
                       <NavigationMenuLink asChild>
-                        <Link to="/teams" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-white/5 hover:text-primary focus:bg-white/5 focus:text-primary">
-                          <div className="text-sm font-medium text-white leading-none">Times</div>
+                        <Link
+                          to="/teams"
+                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-white/5 hover:text-primary focus:bg-white/5 focus:text-primary"
+                        >
+                          <div className="text-sm font-medium text-white leading-none">
+                            Times
+                          </div>
                           <p className="line-clamp-2 text-sm leading-snug text-zinc-500">
                             Organizações registradas.
                           </p>
@@ -113,8 +129,13 @@ export function Navbar({ className }: { className?: string }) {
                     </li>
                     <li>
                       <NavigationMenuLink asChild>
-                        <Link to="/rules" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-white/5 hover:text-primary focus:bg-white/5 focus:text-primary">
-                          <div className="text-sm font-medium text-white leading-none">Regulamento</div>
+                        <Link
+                          to="/rules"
+                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-white/5 hover:text-primary focus:bg-white/5 focus:text-primary"
+                        >
+                          <div className="text-sm font-medium text-white leading-none">
+                            Regulamento
+                          </div>
                           <p className="line-clamp-2 text-sm leading-snug text-zinc-500">
                             Regras e diretrizes.
                           </p>
@@ -126,21 +147,22 @@ export function Navbar({ className }: { className?: string }) {
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                <Link to="/sponsors">
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    Parceiros
-                  </NavigationMenuLink>
-                </Link>
+                <NavigationMenuLink
+                  asChild
+                  className={navigationMenuTriggerStyle()}
+                >
+                  <Link to="/sponsors">Parceiros</Link>
+                </NavigationMenuLink>
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                <Link to="/contact">
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    Contato
-                  </NavigationMenuLink>
-                </Link>
+                <NavigationMenuLink
+                  asChild
+                  className={navigationMenuTriggerStyle()}
+                >
+                  <Link to="/contact">Contato</Link>
+                </NavigationMenuLink>
               </NavigationMenuItem>
-
             </NavigationMenuList>
           </NavigationMenu>
         </div>
@@ -152,15 +174,27 @@ export function Navbar({ className }: { className?: string }) {
               <span className="text-sm text-muted-foreground hidden lg:inline-block">
                 {user?.firstName || user?.username}
               </span>
-              <Button variant="ghost" size="sm" onClick={() => logout()}>Logout</Button>
-              <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90" asChild>
+              <Button variant="ghost" size="sm" onClick={() => logout()}>
+                Logout
+              </Button>
+              <Button
+                size="sm"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                asChild
+              >
                 <Link to="/dashboard">Dashboard</Link>
               </Button>
             </>
           ) : (
             <>
-              <Button variant="ghost" size="sm" onClick={() => login()}>Sign in</Button>
-              <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => register()}>
+              <Button variant="ghost" size="sm" onClick={() => login()}>
+                Sign in
+              </Button>
+              <Button
+                size="sm"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                onClick={() => register()}
+              >
                 Start Journey
               </Button>
             </>
@@ -171,37 +205,70 @@ export function Navbar({ className }: { className?: string }) {
         <div className="flex md:hidden">
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon"><Menu className="h-5 w-5" /></Button>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-5 w-5" />
+              </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="border-l-white/5 bg-background text-foreground">
+            <SheetContent
+              side="right"
+              className="border-l-white/5 bg-background text-foreground"
+            >
               <SheetHeader className="text-left border-b border-white/5 pb-4">
                 <SheetTitle className="text-white">CSELOL</SheetTitle>
               </SheetHeader>
               <div className="mt-8 flex flex-col gap-4">
-                <Link to="/" onClick={() => setIsOpen(false)}>Início</Link>
-                <Link to="/history" onClick={() => setIsOpen(false)}>História</Link>
-                
+                <Link to="/" onClick={() => setIsOpen(false)}>
+                  Início
+                </Link>
+                <Link to="/history" onClick={() => setIsOpen(false)}>
+                  História
+                </Link>
+
                 {/* Mobile Grouping */}
                 <div className="flex flex-col gap-3 pl-4 border-l border-white/10">
-                    <span className="text-xs font-bold text-zinc-500 uppercase">Competição</span>
-                    <Link to="/tournaments" onClick={() => setIsOpen(false)}>Torneios</Link>
-                    <Link to="/standings" onClick={() => setIsOpen(false)}>Tabela</Link>
-                    <Link to="/teams" onClick={() => setIsOpen(false)}>Times</Link>
-                    <Link to="/rules" onClick={() => setIsOpen(false)}>Regulamento</Link>
+                  <span className="text-xs font-bold text-zinc-500 uppercase">
+                    Competição
+                  </span>
+                  <Link to="/tournaments" onClick={() => setIsOpen(false)}>
+                    Torneios
+                  </Link>
+                  <Link to="/standings" onClick={() => setIsOpen(false)}>
+                    Tabela
+                  </Link>
+                  <Link to="/teams" onClick={() => setIsOpen(false)}>
+                    Times
+                  </Link>
+                  <Link to="/rules" onClick={() => setIsOpen(false)}>
+                    Regulamento
+                  </Link>
                 </div>
 
-                <Link to="/sponsors" onClick={() => setIsOpen(false)}>Parceiros</Link>
-                <Link to="/contact" onClick={() => setIsOpen(false)}>Contato</Link>
-                
+                <Link to="/sponsors" onClick={() => setIsOpen(false)}>
+                  Parceiros
+                </Link>
+                <Link to="/contact" onClick={() => setIsOpen(false)}>
+                  Contato
+                </Link>
+
                 <div className="h-px bg-white/5 my-2" />
                 {isAuthenticated ? (
-                   <Button className="w-full bg-primary" asChild onClick={() => setIsOpen(false)}>
-                      <Link to="/dashboard">Dashboard</Link>
-                   </Button>
+                  <Button
+                    className="w-full bg-primary"
+                    asChild
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <Link to="/dashboard">Dashboard</Link>
+                  </Button>
                 ) : (
-                   <Button className="w-full bg-primary" onClick={() => { register(); setIsOpen(false); }}>
-                      Start Journey
-                   </Button>
+                  <Button
+                    className="w-full bg-primary"
+                    onClick={() => {
+                      register();
+                      setIsOpen(false);
+                    }}
+                  >
+                    Start Journey
+                  </Button>
                 )}
               </div>
             </SheetContent>

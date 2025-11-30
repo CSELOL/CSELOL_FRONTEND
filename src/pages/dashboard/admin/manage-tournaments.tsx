@@ -3,14 +3,15 @@ import { Link } from "react-router-dom";
 import {
   Plus,
   Trophy,
-  MoreHorizontal,
   Search,
-  ArrowRight,
-  History,
   Archive,
   Trash2,
   AlertTriangle,
   Loader2,
+  WifiOff,
+  RefreshCw,
+  MoreHorizontal,
+  ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,17 +43,16 @@ import {
   deleteTournamentAPI,
 } from "@/api/tournaments";
 
-// 1. Updated Interface matching your DB Schema exactly
 interface Tournament {
   id: number;
-  tournament_name: string; // Changed from name
-  tournament_description: string; // Changed from description
+  tournament_name: string;
+  tournament_description: string;
   status: string;
   start_date: string | null;
   banner_url: string | null;
   logo_url: string | null;
   format: string;
-  max_teams: number; // API doesn't return this based on schema, but keeping if you add it back or derive it
+  max_teams: number;
   is_listed: boolean;
   allow_signups: boolean;
   is_archived: boolean;
@@ -61,7 +61,10 @@ interface Tournament {
 export function AdminTournamentsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
+
+  // --- NEW STATE FOR ERROR HANDLING ---
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Alert Dialog State
   const [alertOpen, setAlertOpen] = useState(false);
@@ -74,13 +77,18 @@ export function AdminTournamentsPage() {
 
   async function loadTournaments() {
     setIsLoading(true);
+    setError(null); // Reset error before fetching
+
     try {
       const data = await getTournamentsAPI();
-      // Sort by ID descending
       const sorted = data.sort((a: Tournament, b: Tournament) => b.id - a.id);
       setTournaments(sorted);
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error("Failed to load tournaments:", err);
+      // Set a user-friendly error message
+      setError(
+        "Unable to connect to the server. Please check if the backend is running."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -90,7 +98,7 @@ export function AdminTournamentsPage() {
     loadTournaments();
   }, []);
 
-  // --- HANDLERS FOR OPENING DIALOGS ---
+  // --- ACTIONS ---
   const promptArchive = (t: Tournament) => {
     setSelectedTournament(t);
     setActionType("archive");
@@ -103,14 +111,12 @@ export function AdminTournamentsPage() {
     setAlertOpen(true);
   };
 
-  // --- EXECUTE ACTION ---
   const confirmAction = async () => {
     if (!selectedTournament || !actionType) return;
 
     setIsActionLoading(true);
     try {
       if (actionType === "archive") {
-        // Toggle the current archive status
         await updateTournamentAPI(selectedTournament.id, {
           is_archived: !selectedTournament.is_archived,
         });
@@ -118,7 +124,6 @@ export function AdminTournamentsPage() {
         await deleteTournamentAPI(selectedTournament.id);
       }
 
-      // Refresh list
       await loadTournaments();
       setAlertOpen(false);
     } catch (error) {
@@ -131,7 +136,6 @@ export function AdminTournamentsPage() {
     }
   };
 
-  // --- FILTERS ---
   const activeTournaments = tournaments.filter((t) => !t.is_archived);
   const archivedTournaments = tournaments.filter((t) => t.is_archived);
 
@@ -153,67 +157,89 @@ export function AdminTournamentsPage() {
         </Button>
       </div>
 
-      <Tabs defaultValue="active" className="w-full">
-        <div className="flex items-center justify-between mb-6">
-          <TabsList className="bg-zinc-900/50 border border-white/10 h-10">
-            <TabsTrigger value="active" className="gap-2">
-              <Trophy className="h-4 w-4" /> Active Events
-            </TabsTrigger>
-            <TabsTrigger value="archive" className="gap-2">
-              <Archive className="h-4 w-4" /> Archive
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Search Bar */}
-          <div className="hidden md:flex items-center gap-2 bg-zinc-900/50 p-1.5 rounded-lg border border-white/5 w-64">
-            <Search className="h-4 w-4 text-zinc-500 ml-2" />
-            <Input
-              placeholder="Search..."
-              className="border-0 bg-transparent focus-visible:ring-0 text-white h-7 text-sm"
-            />
+      {/* --- ERROR STATE --- */}
+      {error ? (
+        <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-8 text-center flex flex-col items-center gap-4">
+          <div className="h-12 w-12 rounded-full bg-red-500/20 flex items-center justify-center text-red-500">
+            <WifiOff className="h-6 w-6" />
           </div>
+          <div>
+            <h3 className="text-lg font-bold text-white">Connection Error</h3>
+            <p className="text-zinc-400 max-w-md">{error}</p>
+          </div>
+          <Button
+            onClick={loadTournaments}
+            variant="outline"
+            className="border-red-500/20 hover:bg-red-500/10 text-red-400"
+          >
+            <RefreshCw className="mr-2 h-4 w-4" /> Try Again
+          </Button>
         </div>
+      ) : (
+        /* --- NORMAL CONTENT --- */
+        <Tabs defaultValue="active" className="w-full">
+          <div className="flex items-center justify-between mb-6">
+            <TabsList className="bg-zinc-900/50 border border-white/10 h-10">
+              <TabsTrigger value="active" className="gap-2">
+                <Trophy className="h-4 w-4" /> Active Events
+              </TabsTrigger>
+              <TabsTrigger value="archive" className="gap-2">
+                <Archive className="h-4 w-4" /> Archive
+              </TabsTrigger>
+            </TabsList>
 
-        {/* --- ACTIVE TAB --- */}
-        <TabsContent value="active" className="space-y-6">
-          {isLoading ? (
-            <div className="text-white">Loading...</div>
-          ) : (
-            <>
-              {activeTournaments.map((t) => (
-                <TournamentCard
-                  key={t.id}
-                  t={t}
-                  onArchive={() => promptArchive(t)}
-                  onDelete={() => promptDelete(t)}
-                />
-              ))}
-              {activeTournaments.length === 0 && (
-                <div className="text-center text-zinc-500 py-10 border border-dashed border-white/10 rounded-lg">
-                  No active tournaments found.
-                </div>
-              )}
-            </>
-          )}
-        </TabsContent>
-
-        {/* --- ARCHIVE TAB --- */}
-        <TabsContent value="archive" className="space-y-6">
-          {archivedTournaments.map((t) => (
-            <TournamentCard
-              key={t.id}
-              t={t}
-              onArchive={() => promptArchive(t)} // This will unarchive it
-              onDelete={() => promptDelete(t)}
-            />
-          ))}
-          {archivedTournaments.length === 0 && (
-            <div className="text-center text-zinc-500 py-10 border border-dashed border-white/10 rounded-lg">
-              No archived tournaments found.
+            <div className="hidden md:flex items-center gap-2 bg-zinc-900/50 p-1.5 rounded-lg border border-white/5 w-64">
+              <Search className="h-4 w-4 text-zinc-500 ml-2" />
+              <Input
+                placeholder="Search..."
+                className="border-0 bg-transparent focus-visible:ring-0 text-white h-7 text-sm"
+              />
             </div>
-          )}
-        </TabsContent>
-      </Tabs>
+          </div>
+
+          {/* --- ACTIVE TAB --- */}
+          <TabsContent value="active" className="space-y-6">
+            {isLoading ? (
+              <div className="text-white text-center py-10">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto" /> Loading...
+              </div>
+            ) : (
+              <>
+                {activeTournaments.map((t) => (
+                  <TournamentCard
+                    key={t.id}
+                    t={t}
+                    onArchive={() => promptArchive(t)}
+                    onDelete={() => promptDelete(t)}
+                  />
+                ))}
+                {activeTournaments.length === 0 && (
+                  <div className="text-center text-zinc-500 py-10 border border-dashed border-white/10 rounded-lg">
+                    No active tournaments found.
+                  </div>
+                )}
+              </>
+            )}
+          </TabsContent>
+
+          {/* --- ARCHIVE TAB --- */}
+          <TabsContent value="archive" className="space-y-6">
+            {archivedTournaments.map((t) => (
+              <TournamentCard
+                key={t.id}
+                t={t}
+                onArchive={() => promptArchive(t)}
+                onDelete={() => promptDelete(t)}
+              />
+            ))}
+            {archivedTournaments.length === 0 && (
+              <div className="text-center text-zinc-500 py-10 border border-dashed border-white/10 rounded-lg">
+                No archived tournaments found.
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      )}
 
       <CreateTournamentDialog
         open={isCreateOpen}
@@ -221,7 +247,6 @@ export function AdminTournamentsPage() {
         onSuccess={loadTournaments}
       />
 
-      {/* --- CONFIRMATION DIALOG (Pretty) --- */}
       <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
         <AlertDialogContent className="bg-zinc-950 border-white/10 text-white">
           <AlertDialogHeader>
@@ -305,11 +330,9 @@ function TournamentCard({
               </Badge>
               {t.is_archived && <Badge variant="secondary">ARCHIVED</Badge>}
             </div>
-            {/* UPDATED: Uses tournament_name */}
             <h2 className="text-3xl font-black text-white uppercase italic tracking-tight leading-none">
               {t.tournament_name}
             </h2>
-            {/* UPDATED: Uses tournament_description */}
             <p className="text-zinc-400 max-w-lg line-clamp-2">
               {t.tournament_description || "No description provided."}
             </p>

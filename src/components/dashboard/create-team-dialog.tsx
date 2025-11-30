@@ -4,14 +4,16 @@ import {
   Loader2,
   Shield,
   Hash,
-  AtSign,
-  MessageSquare,
+  Twitter,
+  Youtube,
+  Twitch,
   Image as ImageIcon,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea"; // Need to install if missing
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +23,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { createTeamAPI } from "@/api/teams";
+import { uploadLogo } from "@/services/storage-service"; // Only importing upload
 
 interface CreateTeamDialogProps {
   open: boolean;
@@ -33,40 +37,96 @@ export function CreateTeamDialog({
 }: CreateTeamDialogProps) {
   const [isLoading, setIsLoading] = React.useState(false);
 
-  // State
+  // Form State
   const [name, setName] = React.useState("");
   const [tag, setTag] = React.useState("");
-  const [bio, setBio] = React.useState("");
+  const [description, setDescription] = React.useState("");
+
+  // --- IMAGE STATE ---
+  const [logoUrl, setLogoUrl] = React.useState("");
+  const [isUploading, setIsUploading] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Socials State
   const [twitter, setTwitter] = React.useState("");
   const [instagram, setInstagram] = React.useState("");
+  const [twitch, setTwitch] = React.useState("");
+  const [youtube, setYoutube] = React.useState("");
   const [discord, setDiscord] = React.useState("");
+
+  // 1. Handle File Upload (Safe Mode: No Delete)
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      // Simply upload the new file.
+      // If an old file existed, we leave it (orphan) to avoid security risks.
+      const publicUrl = await uploadLogo(file);
+      setLogoUrl(publicUrl);
+    } catch (error) {
+      alert("Failed to upload image.");
+      console.error(error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // 2. Handle Remove (UI Only)
+  const handleRemoveImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    // Just clear the state. No server request needed.
+    setLogoUrl("");
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Construct the payload
     const teamPayload = {
       name,
       tag,
-      bio,
-      socials: {
-        twitter,
-        instagram,
-        discord,
+      description,
+      logo_url: logoUrl,
+      social_media: {
+        twitter: twitter || null,
+        instagram: instagram || null,
+        twitch: twitch || null,
+        youtube: youtube || null,
+        others: discord ? [discord] : [],
       },
-      // logo would be handled via file upload logic
     };
 
-    console.log("Creating Team:", teamPayload);
-
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await createTeamAPI(teamPayload);
       onOpenChange(false);
-      alert(`Team ${name} [${tag}] created successfully!`);
-    }, 2000);
+
+      // Reset Form
+      setName("");
+      setTag("");
+      setDescription("");
+      setLogoUrl("");
+      setTwitter("");
+      setInstagram("");
+      setTwitch("");
+      setYoutube("");
+      setDiscord("");
+
+      // Reload page to show new team (or use context/state in a real app)
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+      alert("Failed to create team. Name or Tag might be taken.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -78,8 +138,7 @@ export function CreateTeamDialog({
             Register New Team
           </DialogTitle>
           <DialogDescription className="text-zinc-400">
-            Establish your organization. You can edit these details later in
-            settings.
+            Establish your organization.
           </DialogDescription>
         </DialogHeader>
 
@@ -90,100 +149,133 @@ export function CreateTeamDialog({
               <TabsTrigger value="socials">Socials & Bio</TabsTrigger>
             </TabsList>
 
-            {/* --- TAB 1: BASIC IDENTITY --- */}
             <TabsContent value="identity" className="space-y-6">
-              {/* Logo Upload Mockup */}
+              {/* --- IMAGE UPLOAD UI --- */}
               <div className="flex flex-col items-center justify-center gap-3 py-4">
-                <div className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-full border-2 border-dashed border-white/20 bg-white/5 transition-colors hover:border-primary/50 hover:bg-primary/10 relative group overflow-hidden">
-                  <Upload className="h-6 w-6 text-zinc-400 group-hover:text-primary" />
-                  <span className="mt-1 text-[10px] text-zinc-500">
-                    Upload Logo
-                  </span>
+                <div
+                  className="relative flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-full border-2 border-dashed border-white/20 bg-white/5 transition-colors hover:border-primary/50 hover:bg-primary/10 overflow-hidden"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {logoUrl ? (
+                    <img
+                      src={logoUrl}
+                      alt="Logo Preview"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <>
+                      {isUploading ? (
+                        <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+                      ) : (
+                        <>
+                          <Upload className="h-6 w-6 text-zinc-400" />
+                          <span className="mt-1 text-[10px] text-zinc-500">
+                            Upload
+                          </span>
+                        </>
+                      )}
+                    </>
+                  )}
+                  {/* Hidden Input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
                 </div>
+                {logoUrl && !isUploading && (
+                  <button
+                    type="button"
+                    className="text-xs text-red-400 hover:underline"
+                    onClick={handleRemoveImage}
+                  >
+                    Remove Logo
+                  </button>
+                )}
               </div>
 
               <div className="grid gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="name" className="text-zinc-300">
-                    Team Name
-                  </Label>
+                  <Label>Team Name</Label>
                   <Input
-                    id="name"
-                    placeholder="e.g. Sergipe Slayers"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="bg-zinc-900/50 border-white/10 focus-visible:ring-primary"
+                    className="bg-zinc-900/50 border-white/10"
                     required
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="tag" className="text-zinc-300">
-                    Tag (2-4 Characters)
-                  </Label>
+                  <Label>Tag</Label>
                   <div className="relative">
                     <Input
-                      id="tag"
-                      placeholder="SLY"
-                      maxLength={4}
                       value={tag}
                       onChange={(e) => setTag(e.target.value.toUpperCase())}
-                      className="bg-zinc-900/50 border-white/10 focus-visible:ring-primary uppercase font-mono pl-9"
+                      maxLength={4}
+                      className="bg-zinc-900/50 border-white/10 pl-9 uppercase"
                       required
                     />
                     <Hash className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
-                    <span className="absolute right-3 top-2.5 text-xs text-zinc-500">
-                      {tag.length}/4
-                    </span>
                   </div>
                 </div>
               </div>
             </TabsContent>
 
-            {/* --- TAB 2: SOCIALS & BIO --- */}
             <TabsContent value="socials" className="space-y-4">
               <div className="grid gap-2">
-                <Label htmlFor="bio" className="text-zinc-300">
-                  Description (Bio)
-                </Label>
+                <Label>Description</Label>
                 <Textarea
-                  id="bio"
-                  placeholder="Tell us about your team..."
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  className="bg-zinc-900/50 border-white/10 focus-visible:ring-primary min-h-[80px]"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="bg-zinc-900/50 border-white/10 min-h-[80px]"
                 />
               </div>
-
               <div className="grid gap-3 mt-4">
-                <Label className="text-zinc-300">Social Media</Label>
-
+                <Label className="text-zinc-300">Social Media Links</Label>
                 <div className="relative">
-                  <AtSign className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+                  <Twitter className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
                   <Input
-                    placeholder="Twitter / X Handle"
+                    placeholder="Twitter URL"
                     value={twitter}
                     onChange={(e) => setTwitter(e.target.value)}
-                    className="pl-9 bg-zinc-900/50 border-white/10 focus-visible:ring-primary"
+                    className="pl-9 bg-zinc-900/50 border-white/10"
                   />
                 </div>
-
                 <div className="relative">
                   <ImageIcon className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
                   <Input
-                    placeholder="Instagram Handle"
+                    placeholder="Instagram URL"
                     value={instagram}
                     onChange={(e) => setInstagram(e.target.value)}
-                    className="pl-9 bg-zinc-900/50 border-white/10 focus-visible:ring-primary"
+                    className="pl-9 bg-zinc-900/50 border-white/10"
                   />
                 </div>
-
+                <div className="relative">
+                  <Twitch className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+                  <Input
+                    placeholder="Twitch URL"
+                    value={twitch}
+                    onChange={(e) => setTwitch(e.target.value)}
+                    className="pl-9 bg-zinc-900/50 border-white/10"
+                  />
+                </div>
+                <div className="relative">
+                  <Youtube className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+                  <Input
+                    placeholder="Youtube URL"
+                    value={youtube}
+                    onChange={(e) => setYoutube(e.target.value)}
+                    className="pl-9 bg-zinc-900/50 border-white/10"
+                  />
+                </div>
                 <div className="relative">
                   <MessageSquare className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
                   <Input
-                    placeholder="Discord Invite Link"
+                    placeholder="Discord Invite"
                     value={discord}
                     onChange={(e) => setDiscord(e.target.value)}
-                    className="pl-9 bg-zinc-900/50 border-white/10 focus-visible:ring-primary"
+                    className="pl-9 bg-zinc-900/50 border-white/10"
                   />
                 </div>
               </div>
@@ -200,11 +292,14 @@ export function CreateTeamDialog({
             </Button>
             <Button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || isUploading}
               className="bg-primary text-primary-foreground font-bold"
             >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create Team
+              {isLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                "Register Team"
+              )}
             </Button>
           </DialogFooter>
         </form>

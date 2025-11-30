@@ -1,4 +1,6 @@
-import { Calendar, ArrowRight, Lock } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Calendar, ArrowRight, Lock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -10,77 +12,50 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { getTournamentsAPI } from "@/api/tournaments"; // Import API
 
-const tournaments = [
-  {
-    id: 1,
-    name: "Season 5 - Split 1",
-    status: "OPEN",
-    date: "May 15",
-    prize: "R$ 5.000",
-    slots: "8/16",
-    minRank: "Open",
-    img: "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070&auto=format&fit=crop",
-  },
-  {
-    id: 2,
-    name: "Community Cup #4",
-    status: "FULL",
-    date: "June 01",
-    prize: "RP Points",
-    slots: "32/32",
-    minRank: "Gold+",
-    img: "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=2071&auto=format&fit=crop",
-  },
-  {
-    id: 3,
-    name: "Season 4 Finals",
-    status: "COMPLETED",
-    date: "Jan 10",
-    prize: "R$ 10.000",
-    slots: "16/16",
-    minRank: "Open",
-    img: "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?q=80&w=2070&auto=format&fit=crop",
-  },
-];
-
-// 1. Define what a Tournament looks like
+// Define Interface matching your API
 interface Tournament {
-  id: string;
-  name: string;
-  status: string;
-  img: string;
-  date: string;
-  prize: string;
-  slots: string;
-  minRank: string;
+  id: number;
+  tournament_name: string;
+  status: string; // scheduled, running, completed
+  start_date: string | null;
+  banner_url: string | null;
+  // ... other fields
+  is_listed: boolean;
+  allow_signups: boolean;
 }
 
 export function PublicTournamentsPage() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // FETCH FROM API
   useEffect(() => {
-    fetch("http://localhost:3333/api/tournaments")
-      .then((res) => res.json())
-      .then((data) => {
-        setTournaments(data);
-        setLoading(false);
-      })
-      .catch((err) => console.error(err));
+    async function load() {
+      try {
+        const data = await getTournamentsAPI();
+        // Filter: Only show tournaments where is_listed = true
+        const publicTournaments = data.filter((t: Tournament) => t.is_listed);
+        setTournaments(publicTournaments);
+      } catch (error) {
+        console.error("Failed to load tournaments", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    load();
   }, []);
 
-  if (loading)
+  if (isLoading)
     return (
-      <div className="text-white pt-24 text-center">Loading Tournaments...</div>
+      <div className="pt-32 text-center text-zinc-500">
+        <Loader2 className="h-8 w-8 animate-spin mx-auto" /> Loading Events...
+      </div>
     );
 
   return (
     <div className="min-h-screen bg-background pt-24 pb-20">
-      <div className="container max-w-6xl px-4 mx-autoaaa">
+      <div className="container max-w-6xl px-4 mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-4">
           <div>
             <h1 className="text-4xl font-bold text-white mb-2">Tournaments</h1>
@@ -88,11 +63,11 @@ export function PublicTournamentsPage() {
               Compete in official leagues and community cups.
             </p>
           </div>
+          {/* Tabs can remain static or filter the 'tournaments' state */}
           <Tabs defaultValue="all" className="w-full md:w-auto">
             <TabsList className="bg-zinc-900 border border-white/5">
               <TabsTrigger value="all">All Events</TabsTrigger>
               <TabsTrigger value="open">Open</TabsTrigger>
-              <TabsTrigger value="past">Past</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -103,51 +78,35 @@ export function PublicTournamentsPage() {
               key={t.id}
               className="bg-zinc-900/50 border-white/10 overflow-hidden flex flex-col hover:border-white/20 transition-all group"
             >
-              <div className="h-48 w-full relative overflow-hidden">
+              <div className="h-48 w-full relative overflow-hidden bg-black">
                 <div
                   className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
-                  style={{ backgroundImage: `url(${t.img})` }}
+                  style={{
+                    backgroundImage: t.banner_url
+                      ? `url(${t.banner_url})`
+                      : undefined,
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-transparent to-transparent" />
-                <Badge
-                  className={`absolute top-4 right-4 ${
-                    t.status === "OPEN"
-                      ? "bg-emerald-500 text-white"
-                      : t.status === "FULL"
-                      ? "bg-yellow-500 text-black"
-                      : "bg-zinc-700 text-zinc-400"
-                  }`}
-                >
+                <Badge className="absolute top-4 right-4 bg-zinc-800 text-white border-0 capitalize">
                   {t.status}
                 </Badge>
               </div>
 
               <CardHeader>
-                <CardTitle className="text-white text-xl">{t.name}</CardTitle>
+                <CardTitle className="text-white text-xl">
+                  {t.tournament_name}
+                </CardTitle>
                 <CardDescription className="flex items-center gap-2">
-                  <Calendar className="h-3 w-3" /> {t.date}
+                  <Calendar className="h-3 w-3" />
+                  {t.start_date
+                    ? new Date(t.start_date).toLocaleDateString()
+                    : "TBD"}
                 </CardDescription>
               </CardHeader>
 
-              <CardContent className="space-y-3 flex-1">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-zinc-500">Prize Pool</span>
-                  <span className="font-bold text-white font-mono">
-                    {t.prize}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-zinc-500">Registered</span>
-                  <span className="font-bold text-zinc-300">{t.slots}</span>
-                </div>
-              </CardContent>
-
-              <CardFooter className="pt-0">
-                {/* 
-                           --- KEY CHANGE --- 
-                           Instead of opening a modal, we redirect to the dashboard 
-                        */}
-                {t.status === "OPEN" ? (
+              <CardFooter className="pt-0 mt-auto">
+                {t.allow_signups ? (
                   <Button
                     className="w-full bg-primary text-primary-foreground font-bold"
                     asChild
@@ -162,15 +121,18 @@ export function PublicTournamentsPage() {
                     className="w-full border-white/10 text-zinc-500"
                     disabled
                   >
-                    <Lock className="mr-2 h-4 w-4" />
-                    {t.status === "FULL"
-                      ? "Registration Closed"
-                      : "Event Ended"}
+                    <Lock className="mr-2 h-4 w-4" /> Registration Closed
                   </Button>
                 )}
               </CardFooter>
             </Card>
           ))}
+
+          {tournaments.length === 0 && (
+            <div className="col-span-full text-center py-20 text-zinc-500">
+              No active tournaments found.
+            </div>
+          )}
         </div>
       </div>
     </div>

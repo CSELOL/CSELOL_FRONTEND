@@ -1,10 +1,9 @@
 import Keycloak from "keycloak-js";
 
-// Configuration matches your Keycloak Server setup
 const keycloakConfig = {
-  url: "http://localhost:8080", // Your Keycloak URL
-  realm: "cselol-realm", // Your created Realm
-  clientId: "cselol-clientID", // Your Client ID (Must be 'Public' access type)
+  url: import.meta.env.VITE_KEYCLOAK_URL,
+  realm: import.meta.env.VITE_KEYCLOAK_REALM,
+  clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID,
 };
 
 const keycloak = new Keycloak(keycloakConfig);

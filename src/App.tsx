@@ -8,7 +8,6 @@ import { Navbar } from "./components/layout/navbar";
 import { Footer } from "./components/layout/footer";
 import { Hero } from "./components/landing/hero";
 import { MatchesSection } from "./components/landing/matches-section";
-// import { FeaturedTeams } from "./components/landing/featured-teams";
 import { StandingsPage } from "./pages/standings-page";
 import { TeamProfilePage } from "./pages/public/team-profile-page";
 import { PublicTournamentsPage } from "./pages/public/tournaments-page";
@@ -24,8 +23,11 @@ import { SettingsPage } from "./pages/dashboard/settings";
 // Admin Components
 import { AdminOverviewPage } from "./pages/dashboard/admin/overview";
 import { AdminTournamentsPage } from "./pages/dashboard/admin/manage-tournaments";
+import { AdminTournamentDetailPage } from "./pages/dashboard/admin/manage-tournaments-detail";
 import { UserManagementPage } from "./pages/dashboard/admin/user-management";
 import { SystemSettingsPage } from "./pages/dashboard/admin/system-settings";
+
+// Public Components
 import { HistoryPage } from "./pages/public/history-page";
 import { TeamsListPage } from "./pages/public/teams-list-page";
 import { SponsorsSection } from "./components/landing/sponsors-section";
@@ -34,12 +36,17 @@ import { CommunitySection } from "./components/landing/community-section";
 import { HistoryTeaser } from "./components/landing/history-teaser";
 import { DashboardTournamentsPage } from "./pages/dashboard/find-tournaments";
 
+// Auth Protection
+import { ProtectedRoute } from "./components/auth/protected-route";
+import { Toaster } from "./components/ui/sonner";
+
 // Helper Layout
 const PublicLayout = () => {
   return (
     <>
       <Outlet />
       <Footer />
+      {/* Toaster removed from here */}
     </>
   );
 };
@@ -52,7 +59,7 @@ function App() {
 
         <main className="flex-1">
           <Routes>
-            {/* --- GROUP 1: PUBLIC PAGES --- */}
+            {/* --- PUBLIC ROUTES --- */}
             <Route element={<PublicLayout />}>
               <Route
                 path="/"
@@ -72,31 +79,41 @@ function App() {
               <Route path="/teams" element={<TeamsListPage />} />
               <Route path="/teams/:teamId" element={<TeamProfilePage />} />
               <Route path="/sponsors" element={<SponsorsPage />} />
-              <Route path="contact" element={<ContactPage />} />
+              <Route path="/contact" element={<ContactPage />} />
             </Route>
 
-            {/* --- GROUP 2: DASHBOARD --- */}
-            <Route path="/dashboard" element={<DashboardLayout />}>
-              {/* Player Routes */}
-              <Route index element={<DashboardPage />} />
-              <Route path="team" element={<MyTeamPage />} />
-              <Route
-                path="tournaments"
-                element={<DashboardTournamentsPage />}
-              />
-              <Route path="matches" element={<PlayerMatchesPage />} />
-              <Route path="settings" element={<SettingsPage />} />
-              
-              {/* Admin Routes (Nested under /dashboard/admin) */}
-              <Route path="admin">
-                <Route index element={<AdminOverviewPage />} />
-                <Route path="tournaments" element={<AdminTournamentsPage />} />
-                <Route path="users" element={<UserManagementPage />} />
-                <Route path="settings" element={<SystemSettingsPage />} />
+            {/* --- DASHBOARD ROUTES --- */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<DashboardLayout />}>
+                <Route index element={<DashboardPage />} />
+                <Route path="team" element={<MyTeamPage />} />
+                <Route
+                  path="tournaments"
+                  element={<DashboardTournamentsPage />}
+                />
+                <Route path="matches" element={<PlayerMatchesPage />} />
+                <Route path="settings" element={<SettingsPage />} />
+
+                <Route path="admin" element={<ProtectedRoute role="admin" />}>
+                  <Route index element={<AdminOverviewPage />} />
+                  <Route
+                    path="tournaments"
+                    element={<AdminTournamentsPage />}
+                  />
+                  <Route
+                    path="tournaments/:id"
+                    element={<AdminTournamentDetailPage />}
+                  />
+                  <Route path="users" element={<UserManagementPage />} />
+                  <Route path="settings" element={<SystemSettingsPage />} />
+                </Route>
               </Route>
             </Route>
           </Routes>
         </main>
+
+        {/* MOVED HERE: Now it exists on every page (Admin included) */}
+        <Toaster />
       </div>
     </Router>
   );
