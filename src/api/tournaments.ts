@@ -32,14 +32,14 @@ export async function createTournamentAPI(data: any) {
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
-  
+
   if (res.status === 401) {
     window.location.reload();
     throw new Error("Unauthorized: Session expired");
   }
   if (res.status === 403) throw new Error("Forbidden");
   if (!res.ok) throw new Error("Failed to create tournament");
-  
+
   return res.json();
 }
 
@@ -49,7 +49,7 @@ export async function generateGroupStageAPI(id: number | string, config: { group
     headers: getAuthHeaders(),
     body: JSON.stringify(config),
   });
-  
+
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || "Failed to generate groups");
@@ -63,7 +63,7 @@ export async function updateTournamentAPI(id: number | string, data: any) {
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
-  
+
   if (res.status === 401) {
     window.location.reload();
     throw new Error("Unauthorized");
@@ -77,7 +77,7 @@ export async function deleteTournamentAPI(id: number | string) {
     method: "DELETE",
     headers: getAuthHeaders(),
   });
-  
+
   if (res.status === 401) {
     window.location.reload();
     throw new Error("Unauthorized");
@@ -134,6 +134,54 @@ export async function getPaymentProofAPI(regId: number) {
     headers: getAuthHeaders()
   });
   if (!res.ok) throw new Error("Failed to get proof URL");
+  return res.json();
+}
+
+// --- NEW ENDPOINTS FOR REVAMP ---
+
+export async function assignTeamsToGroupsAPI(
+  tournamentId: number | string,
+  assignments: { teamId: number; groupName: string }[]
+) {
+  const res = await fetch(`${API_URL}/tournaments/${tournamentId}/assign-groups`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ assignments }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to assign groups");
+  }
+  return res.json();
+}
+
+export async function createTournamentStageAPI(
+  tournamentId: number | string,
+  name: string
+) {
+  const res = await fetch(`${API_URL}/tournaments/${tournamentId}/stages`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ name }),
+  });
+
+  if (!res.ok) throw new Error("Failed to create stage");
+  return res.json();
+}
+
+export async function bulkUpdateMatchesAPI(
+  tournamentId: number | string,
+  matchIds: number[],
+  updates: any
+) {
+  const res = await fetch(`${API_URL}/tournaments/${tournamentId}/matches/bulk`, {
+    method: "PUT",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ matchIds, updates }),
+  });
+
+  if (!res.ok) throw new Error("Failed to bulk update matches");
   return res.json();
 }
 

@@ -17,7 +17,7 @@ import { TournamentHeader } from "@/components/dashboard/admin/tournament-detail
 import { TournamentOverviewStats } from "@/components/dashboard/admin/tournament-details/overview-stats";
 import { TournamentTeamManagement } from "@/components/dashboard/admin/tournament-details/team-management";
 import { TournamentSettingsForm } from "@/components/dashboard/admin/tournament-details/settings-form";
-import { TournamentBracketManager } from "@/components/dashboard/admin/tournament-details/bracket-manager";
+import { TournamentMatchesTab } from "@/components/dashboard/admin/tournament-details/matches-tab";
 
 export function AdminTournamentDetailPage() {
   const { id } = useParams();
@@ -114,7 +114,7 @@ export function AdminTournamentDetailPage() {
         </TabsContent>
 
         <TabsContent value="matches" className="mt-6">
-          <TournamentBracketManager tournamentId={id!} />
+          <TournamentMatchesTab tournamentId={id!} />
         </TabsContent>
 
         <TabsContent value="settings" className="mt-6">

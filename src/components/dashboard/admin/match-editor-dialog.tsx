@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Swords, Save, Loader2, AlertTriangle, Calendar } from "lucide-react";
+import { Swords, Save, Loader2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -209,6 +209,28 @@ export function MatchEditorDialog({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Swap Button */}
+              <div className="flex items-end pb-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-zinc-500 hover:text-white"
+                  onClick={() =>
+                    setFormData({
+                      ...formData,
+                      teamAId: formData.teamBId,
+                      teamBId: formData.teamAId,
+                      scoreA: formData.scoreB,
+                      scoreB: formData.scoreA,
+                    })
+                  }
+                  title="Swap Sides"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
               </div>
 
               {/* Scores */}

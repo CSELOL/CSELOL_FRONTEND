@@ -39,3 +39,29 @@ export async function updateMatchAPI(matchId: number | string, data: any) {
   if (!res.ok) throw new Error("Failed to update match");
   return res.json();
 }
+
+// Create a single match manually
+export async function createMatchAPI(tournamentId: number | string, data: any) {
+  const res = await fetch(`${API_URL}/tournaments/${tournamentId}/matches`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to create match");
+  }
+  return res.json();
+}
+
+// Delete a match
+export async function deleteMatchAPI(matchId: number | string) {
+  const res = await fetch(`${API_URL}/matches/${matchId}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) throw new Error("Failed to delete match");
+  return true;
+}
