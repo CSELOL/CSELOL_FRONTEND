@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calendar, Trophy, Save, Swords } from "lucide-react";
+import { Swords, Save, Loader2, AlertTriangle, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,68 +18,98 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { updateMatchAPI } from "@/api/matches";
+import { toast } from "sonner";
 
-// Types (In a real app, these come from your API types)
-type Team = { id: string; name: string };
+type Team = { id: number; name: string };
 type Match = {
-  id?: string;
-  round: string;
-  teamAId: string;
-  teamBId: string;
+  id?: number;
+  round: number;
+  matchIndex: number;
+  teamAId: number | null;
+  teamBId: number | null;
   scoreA: number;
   scoreB: number;
-  date: string;
-  status: "Scheduled" | "Live" | "Finished";
+  scheduledAt: string;
+  status: "scheduled" | "live" | "completed";
+  bestOf: number; // NEW FIELD
 };
 
 interface MatchEditorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  matchToEdit?: Match | null; // If null, we are creating a new match
-  availableTeams: Team[]; // List of approved teams to pick from
+  matchToEdit?: any;
+  availableTeams: Team[];
+  onSuccess: () => void;
 }
 
-export function MatchEditorDialog({ 
-  open, 
-  onOpenChange, 
-  matchToEdit, 
-  availableTeams 
+export function MatchEditorDialog({
+  open,
+  onOpenChange,
+  matchToEdit,
+  availableTeams,
+  onSuccess,
 }: MatchEditorDialogProps) {
-  
-  // Form State
+  const [isLoading, setIsLoading] = useState(false);
+
   const [formData, setFormData] = useState<Match>({
-    round: "Group Stage",
-    teamAId: "",
-    teamBId: "",
+    id: 0,
+    round: 1,
+    matchIndex: 0,
+    teamAId: null,
+    teamBId: null,
     scoreA: 0,
     scoreB: 0,
-    date: "",
-    status: "Scheduled",
+    scheduledAt: "",
+    status: "scheduled",
+    bestOf: 1, // Default
   });
 
-  // Load data when editing
   useEffect(() => {
     if (matchToEdit) {
-      setFormData(matchToEdit);
-    } else {
-      // Reset if creating new
       setFormData({
-        round: "Group Stage",
-        teamAId: "",
-        teamBId: "",
-        scoreA: 0,
-        scoreB: 0,
-        date: "",
-        status: "Scheduled",
+        id: matchToEdit.id,
+        round: matchToEdit.round,
+        matchIndex: matchToEdit.matchIndex,
+        teamAId: matchToEdit.teamAId,
+        teamBId: matchToEdit.teamBId,
+        scoreA: matchToEdit.scoreA || 0,
+        scoreB: matchToEdit.scoreB || 0,
+        status: matchToEdit.status || "scheduled",
+        scheduledAt: matchToEdit.scheduledAt
+          ? new Date(matchToEdit.scheduledAt).toISOString().slice(0, 16)
+          : "",
+        bestOf: matchToEdit.bestOf || 1, // Load Best Of
       });
     }
   }, [matchToEdit, open]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Saving Match Data:", formData);
-    // Here you would call API: POST /matches (create) or PUT /matches/:id (update)
-    onOpenChange(false);
+    if (!formData.id) return;
+
+    setIsLoading(true);
+    try {
+      await updateMatchAPI(formData.id, {
+        teamAId: formData.teamAId,
+        teamBId: formData.teamBId,
+        scoreA: formData.scoreA,
+        scoreB: formData.scoreB,
+        scheduledAt: formData.scheduledAt
+          ? new Date(formData.scheduledAt).toISOString()
+          : null,
+        status: formData.status,
+        bestOf: formData.bestOf, // Send to API
+      });
+      toast.success("Match updated successfully");
+      onSuccess();
+      onOpenChange(false);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update match");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -88,128 +118,175 @@ export function MatchEditorDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Swords className="h-5 w-5 text-primary" />
-            {matchToEdit ? "Edit Match Details" : "Schedule New Match"}
+            Edit Match #{formData.id}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6 py-4">
-          
-          {/* 1. Logistics */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
-                <Label className="text-zinc-400 text-xs uppercase font-bold">Round / Phase</Label>
-                <Select 
-                    value={formData.round} 
-                    onValueChange={(v) => setFormData({...formData, round: v})}
-                >
-                    <SelectTrigger className="bg-zinc-900 border-white/10">
-                        <SelectValue placeholder="Select Round" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-white/10 text-white">
-                        <SelectItem value="Group Stage">Group Stage</SelectItem>
-                        <SelectItem value="Quarterfinals">Quarterfinals</SelectItem>
-                        <SelectItem value="Semifinals">Semifinals</SelectItem>
-                        <SelectItem value="Grand Finals">Grand Finals</SelectItem>
-                    </SelectContent>
-                </Select>
+              <Label className="text-zinc-400 text-xs uppercase font-bold">
+                Status
+              </Label>
+              <Select
+                value={formData.status}
+                onValueChange={(v: any) =>
+                  setFormData({ ...formData, status: v })
+                }
+              >
+                <SelectTrigger className="bg-zinc-900 border-white/10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-white/10 text-white">
+                  <SelectItem value="scheduled">Scheduled</SelectItem>
+                  <SelectItem value="live">Live</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
-                <Label className="text-zinc-400 text-xs uppercase font-bold">Schedule Date</Label>
-                <div className="relative">
-                    <Input 
-                        type="datetime-local"
-                        className="bg-zinc-900 border-white/10" // Remove pl-9 if icon alignment is tricky
-                        value={formData.date}
-                        onChange={(e) => setFormData({...formData, date: e.target.value})}
-                    />
-                </div>
+              <Label className="text-zinc-400 text-xs uppercase font-bold">
+                Format
+              </Label>
+              <Select
+                value={formData.bestOf.toString()}
+                onValueChange={(v) =>
+                  setFormData({ ...formData, bestOf: parseInt(v) })
+                }
+              >
+                <SelectTrigger className="bg-zinc-900 border-white/10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-white/10 text-white">
+                  <SelectItem value="1">Best of 1</SelectItem>
+                  <SelectItem value="3">Best of 3</SelectItem>
+                  <SelectItem value="5">Best of 5</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-zinc-400 text-xs uppercase font-bold">
+                Date
+              </Label>
+              <Input
+                type="datetime-local"
+                className="bg-zinc-900 border-white/10 text-white text-xs"
+                value={formData.scheduledAt}
+                onChange={(e) =>
+                  setFormData({ ...formData, scheduledAt: e.target.value })
+                }
+              />
             </div>
           </div>
 
           <Separator className="bg-white/10" />
 
-          {/* 2. Teams & Scores */}
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-4">
-                {/* Team A */}
-                <div className="flex-1 space-y-2">
-                    <Label className="text-blue-400 text-xs uppercase font-bold">Blue Side</Label>
-                    <Select 
-                        value={formData.teamAId} 
-                        onValueChange={(v) => setFormData({...formData, teamAId: v})}
-                    >
-                        <SelectTrigger className="bg-zinc-900 border-white/10">
-                            <SelectValue placeholder="Select Team" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-zinc-900 border-white/10 text-white">
-                            {availableTeams.map(t => (
-                                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
+              {/* Blue Side */}
+              <div className="flex-1 space-y-2">
+                <Label className="text-blue-400 text-xs uppercase font-bold">
+                  Blue Side
+                </Label>
+                <Select
+                  value={formData.teamAId?.toString() || "null"}
+                  onValueChange={(v) =>
+                    setFormData({
+                      ...formData,
+                      teamAId: v === "null" ? null : Number(v),
+                    })
+                  }
+                >
+                  <SelectTrigger className="bg-zinc-900 border-white/10">
+                    <SelectValue placeholder="TBD" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-white/10 text-white">
+                    <SelectItem value="null">TBD</SelectItem>
+                    {availableTeams.map((t) => (
+                      <SelectItem key={t.id} value={t.id.toString()}>
+                        {t.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                {/* VS Score */}
-                <div className="flex items-end gap-2 pb-1">
-                    <Input 
-                        type="number" 
-                        className="w-12 text-center bg-black/40 border-white/10 font-mono font-bold text-lg"
-                        value={formData.scoreA}
-                        onChange={(e) => setFormData({...formData, scoreA: parseInt(e.target.value)})}
-                    />
-                    <span className="font-bold text-zinc-500 mb-2">:</span>
-                    <Input 
-                        type="number" 
-                        className="w-12 text-center bg-black/40 border-white/10 font-mono font-bold text-lg"
-                        value={formData.scoreB}
-                        onChange={(e) => setFormData({...formData, scoreB: parseInt(e.target.value)})}
-                    />
-                </div>
+              {/* Scores */}
+              <div className="flex items-end gap-2 pb-1">
+                <Input
+                  type="number"
+                  className="w-12 text-center bg-black/40 border-white/10 font-mono text-lg"
+                  value={formData.scoreA}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      scoreA: parseInt(e.target.value),
+                    })
+                  }
+                />
+                <span className="font-bold text-zinc-500 mb-2">:</span>
+                <Input
+                  type="number"
+                  className="w-12 text-center bg-black/40 border-white/10 font-mono text-lg"
+                  value={formData.scoreB}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      scoreB: parseInt(e.target.value),
+                    })
+                  }
+                />
+              </div>
 
-                {/* Team B */}
-                <div className="flex-1 space-y-2">
-                    <Label className="text-red-400 text-xs uppercase font-bold">Red Side</Label>
-                    <Select 
-                        value={formData.teamBId} 
-                        onValueChange={(v) => setFormData({...formData, teamBId: v})}
-                    >
-                        <SelectTrigger className="bg-zinc-900 border-white/10">
-                            <SelectValue placeholder="Select Team" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-zinc-900 border-white/10 text-white">
-                            {availableTeams.map(t => (
-                                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
+              {/* Red Side */}
+              <div className="flex-1 space-y-2">
+                <Label className="text-red-400 text-xs uppercase font-bold">
+                  Red Side
+                </Label>
+                <Select
+                  value={formData.teamBId?.toString() || "null"}
+                  onValueChange={(v) =>
+                    setFormData({
+                      ...formData,
+                      teamBId: v === "null" ? null : Number(v),
+                    })
+                  }
+                >
+                  <SelectTrigger className="bg-zinc-900 border-white/10">
+                    <SelectValue placeholder="TBD" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-white/10 text-white">
+                    <SelectItem value="null">TBD</SelectItem>
+                    {availableTeams.map((t) => (
+                      <SelectItem key={t.id} value={t.id.toString()}>
+                        {t.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
-          {/* 3. Status */}
-          <div className="space-y-2">
-             <Label className="text-zinc-400 text-xs uppercase font-bold">Match Status</Label>
-             <div className="flex gap-2">
-                {["Scheduled", "Live", "Finished"].map((status) => (
-                    <div 
-                        key={status}
-                        onClick={() => setFormData({...formData, status: status as any})}
-                        className={`flex-1 cursor-pointer rounded border px-3 py-2 text-center text-sm font-bold transition-all ${
-                            formData.status === status 
-                                ? "bg-primary text-primary-foreground border-primary" 
-                                : "bg-zinc-900 text-zinc-500 border-white/10 hover:bg-zinc-800"
-                        }`}
-                    >
-                        {status}
-                    </div>
-                ))}
-             </div>
-          </div>
-
           <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" className="bg-primary font-bold">
-                <Save className="mr-2 h-4 w-4" /> Save Match
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="bg-primary font-bold"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              Save
             </Button>
           </DialogFooter>
         </form>

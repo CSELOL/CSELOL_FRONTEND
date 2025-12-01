@@ -24,7 +24,7 @@ export async function getTournamentByIdAPI(id: string) {
   return res.json();
 }
 
-// --- PROTECTED ROUTES (Includes 401 Safety Net) ---
+// --- PROTECTED ROUTES ---
 
 export async function createTournamentAPI(data: any) {
   const res = await fetch(`${API_URL}/tournaments`, {
@@ -33,22 +33,27 @@ export async function createTournamentAPI(data: any) {
     body: JSON.stringify(data),
   });
   
-  // 1. Session Expiry Check
   if (res.status === 401) {
-    window.location.reload(); // Force reload to trigger re-auth
+    window.location.reload();
     throw new Error("Unauthorized: Session expired");
   }
-
-  // 2. Role Check
-  if (res.status === 403) {
-    throw new Error("Forbidden: You do not have permission to perform this action.");
-  }
-
-  // 3. Generic Error
-  if (!res.ok) {
-    throw new Error("Failed to create tournament");
-  }
+  if (res.status === 403) throw new Error("Forbidden");
+  if (!res.ok) throw new Error("Failed to create tournament");
   
+  return res.json();
+}
+
+export async function generateGroupStageAPI(id: number | string, config: { groups: number, bestOf: number }) {
+  const res = await fetch(`${API_URL}/tournaments/${id}/generate-groups`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(config),
+  });
+  
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to generate groups");
+  }
   return res.json();
 }
 
@@ -59,12 +64,10 @@ export async function updateTournamentAPI(id: number | string, data: any) {
     body: JSON.stringify(data),
   });
   
-  // Session Expiry Check
   if (res.status === 401) {
     window.location.reload();
-    throw new Error("Unauthorized: Session expired");
+    throw new Error("Unauthorized");
   }
-
   if (!res.ok) throw new Error("Failed to update tournament");
   return res.json();
 }
@@ -75,12 +78,10 @@ export async function deleteTournamentAPI(id: number | string) {
     headers: getAuthHeaders(),
   });
   
-  // Session Expiry Check
   if (res.status === 401) {
     window.location.reload();
-    throw new Error("Unauthorized: Session expired");
+    throw new Error("Unauthorized");
   }
-  
   if (!res.ok) throw new Error("Failed to delete tournament");
   return true;
 }
@@ -89,7 +90,7 @@ export async function registerTeamForTournamentAPI(tournamentId: number | string
   const res = await fetch(`${API_URL}/tournaments/${tournamentId}/register`, {
     method: "POST",
     headers: getAuthHeaders(),
-    body: JSON.stringify({ payment_proof_url: paymentProofUrl }), // Send it in body
+    body: JSON.stringify({ payment_proof_url: paymentProofUrl }),
   });
 
   const data = await res.json();
@@ -97,26 +98,27 @@ export async function registerTeamForTournamentAPI(tournamentId: number | string
   return data;
 }
 
-// 1. For Admin Panel (Requires Token)
 export async function getTournamentTeamsAPI(tournamentId: number | string) {
   const res = await fetch(`${API_URL}/tournaments/${tournamentId}/teams`, {
-    headers: getAuthHeaders(), // Protected
+    headers: getAuthHeaders(),
   });
   if (res.status === 401) throw new Error("Unauthorized");
   if (!res.ok) throw new Error("Failed to fetch teams");
   return res.json();
 }
 
-// 2. For Public Pages (No Token)
 export async function getPublicTournamentTeamsAPI(tournamentId: number | string) {
-  const res = await fetch(`${API_URL}/tournaments/${tournamentId}/public-teams`); // Public URL
+  const res = await fetch(`${API_URL}/tournaments/${tournamentId}/public-teams`);
   if (!res.ok) throw new Error("Failed to fetch public roster");
   return res.json();
 }
 
+// --- FIXED ROUTES BELOW ---
+
 // Update Registration Status
 export async function updateRegistrationStatusAPI(regId: number, status: 'APPROVED' | 'REJECTED') {
-  const res = await fetch(`${API_URL}/registrations/${regId}/status`, {
+  // Fixed path: added /tournaments/ prefix
+  const res = await fetch(`${API_URL}/tournaments/registrations/${regId}/status`, {
     method: 'PUT',
     headers: getAuthHeaders(),
     body: JSON.stringify({ status })
@@ -127,9 +129,11 @@ export async function updateRegistrationStatusAPI(regId: number, status: 'APPROV
 
 // Get Proof URL
 export async function getPaymentProofAPI(regId: number) {
-  const res = await fetch(`${API_URL}/registrations/${regId}/proof`, {
+  // Fixed path: added /tournaments/ prefix
+  const res = await fetch(`${API_URL}/tournaments/registrations/${regId}/proof`, {
     headers: getAuthHeaders()
   });
   if (!res.ok) throw new Error("Failed to get proof URL");
-  return res.json(); // returns { url: "..." }
+  return res.json();
 }
+

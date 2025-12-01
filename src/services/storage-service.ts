@@ -132,7 +132,7 @@ export async function uploadPaymentProof(file: File): Promise<string> {
   const filePath = `proofs/${fileName}`;
 
   const { data, error } = await supabase.storage
-    .from("payment-proofs") 
+    .from("private-assets") 
     .upload(filePath, file);
 
   if (error) {

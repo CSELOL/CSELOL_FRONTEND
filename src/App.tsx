@@ -39,6 +39,7 @@ import { DashboardTournamentsPage } from "./pages/dashboard/find-tournaments";
 // Auth Protection
 import { ProtectedRoute } from "./components/auth/protected-route";
 import { Toaster } from "./components/ui/sonner";
+import { PublicTournamentDetailPage } from "./pages/public/tournamenta-detail-page";
 
 // Helper Layout
 const PublicLayout = () => {
@@ -80,6 +81,10 @@ function App() {
               <Route path="/teams/:teamId" element={<TeamProfilePage />} />
               <Route path="/sponsors" element={<SponsorsPage />} />
               <Route path="/contact" element={<ContactPage />} />
+              <Route
+                path="/tournaments/:id"
+                element={<PublicTournamentDetailPage />}
+              />
             </Route>
 
             {/* --- DASHBOARD ROUTES --- */}
@@ -111,8 +116,6 @@ function App() {
             </Route>
           </Routes>
         </main>
-
-        {/* MOVED HERE: Now it exists on every page (Admin included) */}
         <Toaster />
       </div>
     </Router>
