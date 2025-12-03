@@ -26,6 +26,7 @@ export interface Team {
 
 export interface TeamMember {
   id: number;
+  keycloak_id: string;
   nickname: string;
   avatar_url: string | null;
   team_role: string; // 'CAPTAIN', 'MEMBER'
@@ -84,5 +85,46 @@ export async function getTeamMembersAPI(teamId: number) {
   });
 
   if (!res.ok) throw new Error("Failed to fetch roster.");
+  return res.json();
+}
+
+export async function refreshTeamInviteCodeAPI(teamId: number) {
+  const res = await fetch(`${API_URL}/teams/${teamId}/refresh-code`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+  });
+
+  if (res.status === 403) throw new Error("Only captain can refresh code");
+  if (!res.ok) throw new Error("Failed to refresh invite code");
+
+  return res.json();
+}
+
+export async function transferTeamOwnershipAPI(teamId: number, newCaptainId: string) {
+  const res = await fetch(`${API_URL}/teams/${teamId}/transfer-ownership`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ newCaptainId }),
+  });
+
+  if (res.status === 403) throw new Error("Only captain can transfer ownership");
+  if (!res.ok) throw new Error("Failed to transfer ownership");
+
+  return res.json();
+}
+
+export async function getMyTeamMatchesAPI() {
+  const res = await fetch(`${API_URL}/teams/my-team/matches`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch team matches");
+  return res.json();
+}
+
+export async function getMyTeamTournamentsAPI() {
+  const res = await fetch(`${API_URL}/teams/my-team/tournaments?_=${Date.now()}`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch team tournaments");
   return res.json();
 }

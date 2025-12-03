@@ -19,6 +19,8 @@ import { DashboardPage } from "./pages/dashboard/overview";
 import { MyTeamPage } from "./pages/dashboard/my-team";
 import { PlayerMatchesPage } from "./pages/dashboard/matches";
 import { SettingsPage } from "./pages/dashboard/settings";
+import { TournamentsHubPage } from "./pages/dashboard/tournaments-hub";
+import { DashboardTournamentDetailPage } from "./pages/dashboard/tournament-detail";
 
 // Admin Components
 import { AdminOverviewPage } from "./pages/dashboard/admin/overview";
@@ -34,7 +36,6 @@ import { SponsorsSection } from "./components/landing/sponsors-section";
 import { ContactPage } from "./pages/public/contact-page";
 import { CommunitySection } from "./components/landing/community-section";
 import { HistoryTeaser } from "./components/landing/history-teaser";
-import { DashboardTournamentsPage } from "./pages/dashboard/find-tournaments";
 
 // Auth Protection
 import { ProtectedRoute } from "./components/auth/protected-route";
@@ -94,7 +95,11 @@ function App() {
                 <Route path="team" element={<MyTeamPage />} />
                 <Route
                   path="tournaments"
-                  element={<DashboardTournamentsPage />}
+                  element={<TournamentsHubPage />}
+                />
+                <Route
+                  path="tournaments/:id"
+                  element={<DashboardTournamentDetailPage />}
                 />
                 <Route path="matches" element={<PlayerMatchesPage />} />
                 <Route path="settings" element={<SettingsPage />} />

@@ -17,7 +17,7 @@ import { useAuth } from "@/providers/auth-provider";
 const playerItems = [
   { title: "Overview", href: "/dashboard", icon: LayoutDashboard, exact: true },
   { title: "My Team", href: "/dashboard/team", icon: Users },
-  { title: "Find Tournaments", href: "/dashboard/tournaments", icon: Trophy },
+  { title: "Tournaments", href: "/dashboard/tournaments", icon: Trophy },
   { title: "My Matches", href: "/dashboard/matches", icon: Swords },
   { title: "Settings", href: "/dashboard/settings", icon: Settings },
 ];

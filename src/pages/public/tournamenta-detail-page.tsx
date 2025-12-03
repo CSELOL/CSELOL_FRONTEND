@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Calendar, Trophy, Users, Shield } from "lucide-react";
-import { getTournamentByIdAPI, getTournamentTeamsAPI } from "@/api/tournaments";
-import { getTournamentMatchesAPI } from "@/api/matches";
+import { getTournamentByIdAPI, getPublicTournamentTeamsAPI } from "@/api/tournaments";
+import { getPublicTournamentMatchesAPI } from "@/api/matches";
 import { Bracket } from "@/components/tournament/bracket";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -22,8 +22,8 @@ export function PublicTournamentDetailPage() {
       try {
         const [tData, teamsData, matchesData] = await Promise.all([
           getTournamentByIdAPI(id!),
-          getTournamentTeamsAPI(id!),
-          getTournamentMatchesAPI(id!),
+          getPublicTournamentTeamsAPI(id!),
+          getPublicTournamentMatchesAPI(id!),
         ]);
 
         setTournament(tData);

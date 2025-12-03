@@ -98,6 +98,19 @@ export async function registerTeamForTournamentAPI(tournamentId: number | string
   return data;
 }
 
+export async function withdrawRegistrationAPI(tournamentId: number | string) {
+  const res = await fetch(`${API_URL}/tournaments/${tournamentId}/register`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to withdraw registration");
+  }
+  return true;
+}
+
 export async function getTournamentTeamsAPI(tournamentId: number | string) {
   const res = await fetch(`${API_URL}/tournaments/${tournamentId}/teams`, {
     headers: getAuthHeaders(),
@@ -116,12 +129,12 @@ export async function getPublicTournamentTeamsAPI(tournamentId: number | string)
 // --- FIXED ROUTES BELOW ---
 
 // Update Registration Status
-export async function updateRegistrationStatusAPI(regId: number, status: 'APPROVED' | 'REJECTED') {
+export async function updateRegistrationStatusAPI(regId: number, status: 'APPROVED' | 'REJECTED', rejectionReason?: string) {
   // Fixed path: added /tournaments/ prefix
   const res = await fetch(`${API_URL}/tournaments/registrations/${regId}/status`, {
     method: 'PUT',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ status })
+    body: JSON.stringify({ status, rejection_reason: rejectionReason })
   });
   if (!res.ok) throw new Error("Failed to update status");
   return res.json();

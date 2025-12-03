@@ -49,10 +49,11 @@ export function AdminTournamentDetailPage() {
 
   const handleStatusChange = async (
     regId: number,
-    status: "APPROVED" | "REJECTED"
+    status: "APPROVED" | "REJECTED",
+    reason?: string
   ) => {
     try {
-      await updateRegistrationStatusAPI(regId, status);
+      await updateRegistrationStatusAPI(regId, status, reason);
       toast.success(`Team ${status.toLowerCase()}`);
       loadData(); // Refresh list
     } catch (e) {

@@ -16,6 +16,13 @@ export async function getTournamentMatchesAPI(tournamentId: number | string) {
   return res.json();
 }
 
+// Get public matches for a specific tournament (No Token)
+export async function getPublicTournamentMatchesAPI(tournamentId: number | string) {
+  const res = await fetch(`${API_URL}/tournaments/${tournamentId}/matches`);
+  if (!res.ok) throw new Error("Failed to fetch matches");
+  return res.json();
+}
+
 // Generate the initial bracket structure
 export async function generateBracketAPI(tournamentId: number | string) {
   const res = await fetch(`${API_URL}/tournaments/${tournamentId}/generate-bracket`, {
