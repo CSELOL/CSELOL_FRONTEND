@@ -1,19 +1,12 @@
 import { useState, useEffect } from "react";
-import { Trophy, Plus, RefreshCw, Settings2 } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { getTournamentMatchesAPI, generateBracketAPI } from "@/api/matches";
-import {
-  getTournamentTeamsAPI,
-} from "@/api/tournaments";
+import { getTournamentMatchesAPI } from "@/api/matches";
 import { Bracket } from "@/components/tournament/bracket";
 import { MatchEditorDialog } from "@/components/dashboard/admin/match-editor-dialog";
 import { GroupStageView } from "./group-stage-view";
-import { GroupAssignmentView } from "./group-management/GroupAssignmentView";
-import { MatchCreatorDialog } from "./match-management/MatchCreatorDialog";
-import { ScheduleGenerator } from "./match-management/ScheduleGenerator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card } from "@/components/ui/card";
 
 interface MatchesTabProps {
   tournamentId: string;
@@ -25,27 +18,19 @@ export function TournamentMatchesTab({ tournamentId }: MatchesTabProps) {
 
   // Data
   const [matches, setMatches] = useState<any[]>([]);
-  const [teams, setTeams] = useState<any[]>([]);
-  const [standings, setStandings] = useState<any[]>([]);
   const [bracketData, setBracketData] = useState<any[]>([]);
+  const [standings, setStandings] = useState<any[]>([]);
 
   // UI State
-  const [isSetupMode, setIsSetupMode] = useState(false);
-  const [isMatchCreatorOpen, setIsMatchCreatorOpen] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [matchesData, teamsData] = await Promise.all([
-        getTournamentMatchesAPI(tournamentId),
-        getTournamentTeamsAPI(tournamentId),
-      ]);
-
+      const matchesData = await getTournamentMatchesAPI(tournamentId);
       const safeMatches = Array.isArray(matchesData) ? matchesData : [];
       setMatches(safeMatches);
-      setTeams(Array.isArray(teamsData) ? teamsData : []);
 
       // Transform for bracket
       setBracketData(
@@ -53,14 +38,12 @@ export function TournamentMatchesTab({ tournamentId }: MatchesTabProps) {
           safeMatches.filter((m: any) => m.stage === "playoffs")
         )
       );
+      
+      // Calculate standings for group view context (if needed for display)
+      setStandings(calculateStandings(safeMatches.filter((m: any) => m.stage === "groups")));
 
-      // Mock standings from matches
-      const calculatedStandings = calculateStandings(
-        safeMatches.filter((m: any) => m.stage === "groups")
-      );
-      setStandings(calculatedStandings);
     } catch (error) {
-      toast.error("Failed to load data");
+      toast.error("Failed to load matches");
     } finally {
       setLoading(false);
     }
@@ -70,51 +53,9 @@ export function TournamentMatchesTab({ tournamentId }: MatchesTabProps) {
     loadData();
   }, [tournamentId]);
 
-  const handleGenerateBracket = async () => {
-    if (!confirm("Overwrite playoffs?")) return;
-    setLoading(true);
-    try {
-      await generateBracketAPI(tournamentId);
-      toast.success("Bracket generated!");
-      loadData();
-      setStage("playoffs");
-    } catch (e) {
-      toast.error("Failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const openEditor = (match: any) => {
     setSelectedMatch(match);
     setIsEditorOpen(true);
-  };
-
-  const calculateStandings = (matches: any[]) => {
-    const stats: any = {};
-    matches.forEach((m) => {
-      if (m.status !== "completed") return;
-      const winner = m.winnerId;
-      const loser = m.teamAId === winner ? m.teamBId : m.teamAId;
-      if (!winner || !loser) return;
-
-      [winner, loser].forEach((id) => {
-        if (!stats[id])
-          stats[id] = {
-            id,
-            name: id === m.teamAId ? m.teamAName : m.teamBName,
-            wins: 0,
-            losses: 0,
-            points: 0,
-            group_name: m.group_name,
-          };
-      });
-
-      stats[winner].wins++;
-      stats[winner].points += 3;
-      stats[loser].losses++;
-    });
-    return Object.values(stats);
   };
 
   const transformToBracket = (matches: any[]) => {
@@ -151,45 +92,27 @@ export function TournamentMatchesTab({ tournamentId }: MatchesTabProps) {
     return rounds;
   };
 
-  // Helper to extract groups from matches/standings for the generator
-  const getGroupsForGenerator = () => {
-    // This is a bit hacky since we don't have a direct "get groups" API yet
-    // We infer groups from the teams or matches
-    // For now, let's assume we want to generate for all teams if no matches exist
-    // Or if matches exist, we group them by group_name
-    const groupsMap: any = {};
-    
-    // If we have standings, use them to find groups
-    if (standings.length > 0) {
-        standings.forEach((s: any) => {
-            if (!groupsMap[s.group_name]) groupsMap[s.group_name] = [];
-            groupsMap[s.group_name].push(teams.find(t => t.id === s.id) || { id: s.id, name: s.name });
+  const calculateStandings = (matches: any[]) => {
+      // Simplified standings just for passing to GroupStageView if it needs it
+      // ... (Same logic as before)
+      const stats: any = {};
+      matches.forEach((m) => {
+        if (m.status !== "completed") return;
+        const winner = m.winnerId;
+        const loser = m.teamAId === winner ? m.teamBId : m.teamAId;
+        if (!winner || !loser) return;
+  
+        [winner, loser].forEach((id) => {
+          if (!stats[id])
+            stats[id] = { id, wins: 0, losses: 0, points: 0 };
         });
-    } else {
-        // Fallback: if no standings, maybe we just have teams assigned (but we can't see that without the API)
-        // So for now, we pass empty and let the user use the Manual Setup to assign first
-    }
-
-    return Object.keys(groupsMap).map(name => ({
-        id: `group-${name}`,
-        name: `Group ${name}`,
-        teams: groupsMap[name]
-    }));
+  
+        stats[winner].wins++;
+        stats[winner].points += 3;
+        stats[loser].losses++;
+      });
+      return Object.values(stats);
   };
-
-  if (isSetupMode) {
-    return (
-      <GroupAssignmentView
-        tournamentId={tournamentId}
-        allTeams={teams}
-        onSave={() => {
-          setIsSetupMode(false);
-          loadData();
-        }}
-        onCancel={() => setIsSetupMode(false)}
-      />
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -204,51 +127,13 @@ export function TournamentMatchesTab({ tournamentId }: MatchesTabProps) {
             <TabsTrigger value="playoffs">Playoffs</TabsTrigger>
           </TabsList>
         </Tabs>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsMatchCreatorOpen(true)}
-          >
-            <Plus className="h-4 w-4 mr-2" /> Add Match
-          </Button>
-          <Button variant="outline" size="sm" onClick={loadData}>
-            <RefreshCw className="h-4 w-4 mr-2" /> Refresh
-          </Button>
-        </div>
+        <Button variant="outline" size="sm" onClick={loadData}>
+          <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+        </Button>
       </div>
 
       {stage === "groups" && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between bg-zinc-900/30 p-4 rounded-lg border border-white/5">
-            <div className="flex items-center gap-4">
-              <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">
-                Group Stage Management
-              </h3>
-            </div>
-            <div className="flex items-center gap-2">
-               {/* Schedule Generator only if matches exist but we want to regenerate? Or maybe just hide it. 
-                   User said: "after we place every team in groups, we should save the groups and get into scheduling phase."
-                   So if matches exist, we are in scheduling/view phase. 
-                   Let's keep ScheduleGenerator but maybe move it or keep it here for regeneration.
-                   For now, I'll keep it but remove Manual Setup button since it's default view if no matches.
-                   Actually, if matches exist, we might want to go BACK to setup.
-               */}
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setIsSetupMode(true)}
-              >
-                <Settings2 className="h-4 w-4 mr-2" /> Edit Groups
-              </Button>
-              <ScheduleGenerator
-                tournamentId={tournamentId}
-                groups={getGroupsForGenerator()}
-                onSuccess={loadData}
-              />
-            </div>
-          </div>
-
           {matches.some((m) => m.stage === "groups") ? (
             <GroupStageView
               groups={Array.from(new Set(matches.filter(m => m.stage === "groups").map(m => m.group_name || "A"))).sort()}
@@ -257,22 +142,8 @@ export function TournamentMatchesTab({ tournamentId }: MatchesTabProps) {
               onMatchClick={openEditor}
             />
           ) : (
-            <div className="space-y-6">
-                <div className="flex items-center justify-between bg-zinc-900/30 p-4 rounded-lg border border-white/5">
-                    <div className="flex items-center gap-4">
-                        <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">
-                            Setup Group Stage
-                        </h3>
-                    </div>
-                </div>
-                <GroupAssignmentView
-                    tournamentId={tournamentId}
-                    allTeams={teams}
-                    onSave={() => {
-                        loadData();
-                    }}
-                    onCancel={() => {}} // No cancel needed as it's the default view
-                />
+            <div className="text-center py-20 text-zinc-500 border border-dashed border-white/10 rounded-xl">
+              No group stage matches scheduled. Go to "Management" to set up groups.
             </div>
           )}
         </div>
@@ -290,18 +161,9 @@ export function TournamentMatchesTab({ tournamentId }: MatchesTabProps) {
               />
             </div>
           ) : (
-            <Card className="bg-zinc-900/20 border-dashed border-white/10 p-8 flex flex-col items-center justify-center text-center">
-              <Trophy className="h-12 w-12 text-zinc-600 mb-4" />
-              <h3 className="text-lg font-bold text-white">
-                Generate Playoffs
-              </h3>
-              <p className="text-zinc-400 text-sm mb-6">
-                Create a single elimination bracket from approved teams.
-              </p>
-              <Button onClick={handleGenerateBracket} disabled={loading}>
-                <Plus className="mr-2 h-4 w-4" /> Generate Bracket
-              </Button>
-            </Card>
+            <div className="text-center py-20 text-zinc-500 border border-dashed border-white/10 rounded-xl">
+              No playoff matches scheduled. Go to "Management" to generate bracket.
+            </div>
           )}
         </div>
       )}
@@ -310,15 +172,7 @@ export function TournamentMatchesTab({ tournamentId }: MatchesTabProps) {
         open={isEditorOpen}
         onOpenChange={setIsEditorOpen}
         matchToEdit={selectedMatch}
-        availableTeams={teams}
-        onSuccess={loadData}
-      />
-
-      <MatchCreatorDialog
-        open={isMatchCreatorOpen}
-        onOpenChange={setIsMatchCreatorOpen}
-        tournamentId={tournamentId}
-        availableTeams={teams}
+        availableTeams={[]} // Not needed for just editing scores usually, but might need for team swap
         onSuccess={loadData}
       />
     </div>

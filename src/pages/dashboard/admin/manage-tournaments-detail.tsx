@@ -18,6 +18,8 @@ import { TournamentOverviewStats } from "@/components/dashboard/admin/tournament
 import { TournamentTeamManagement } from "@/components/dashboard/admin/tournament-details/team-management";
 import { TournamentSettingsForm } from "@/components/dashboard/admin/tournament-details/settings-form";
 import { TournamentMatchesTab } from "@/components/dashboard/admin/tournament-details/matches-tab";
+import { TournamentManagementTab } from "@/components/dashboard/admin/tournament-details/management-tab";
+import { TournamentStandingsTab } from "@/components/dashboard/admin/tournament-details/standings-tab";
 
 export function AdminTournamentDetailPage() {
   const { id } = useParams();
@@ -84,15 +86,21 @@ export function AdminTournamentDetailPage() {
       <TournamentHeader tournament={tournament} onRefresh={loadData} />
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="bg-zinc-900 border border-white/5 w-full justify-start h-12">
+        <TabsList className="bg-zinc-900 border border-white/5 w-full justify-start h-12 overflow-x-auto">
           <TabsTrigger value="overview" className="h-10 px-6">
             Overview
           </TabsTrigger>
           <TabsTrigger value="teams" className="h-10 px-6">
             Teams
           </TabsTrigger>
+          <TabsTrigger value="standings" className="h-10 px-6">
+            Standings
+          </TabsTrigger>
           <TabsTrigger value="matches" className="h-10 px-6">
             Matches
+          </TabsTrigger>
+          <TabsTrigger value="management" className="h-10 px-6">
+            Management
           </TabsTrigger>
           <TabsTrigger value="settings" className="h-10 px-6">
             Settings
@@ -114,8 +122,16 @@ export function AdminTournamentDetailPage() {
           />
         </TabsContent>
 
+        <TabsContent value="standings" className="mt-6">
+          <TournamentStandingsTab tournamentId={id!} />
+        </TabsContent>
+
         <TabsContent value="matches" className="mt-6">
           <TournamentMatchesTab tournamentId={id!} />
+        </TabsContent>
+
+        <TabsContent value="management" className="mt-6">
+          <TournamentManagementTab tournamentId={id!} />
         </TabsContent>
 
         <TabsContent value="settings" className="mt-6">
