@@ -150,11 +150,12 @@ export async function getPaymentProofAPI(regId: number) {
   return res.json();
 }
 
-// --- NEW ENDPOINTS FOR REVAMP ---
+
 
 export async function assignTeamsToGroupsAPI(
   tournamentId: number | string,
-  assignments: { teamId: number; groupName: string }[]
+  // Update the type here to allow 'string | null'
+  assignments: { teamId: number; groupName: string | null }[] 
 ) {
   const res = await fetch(`${API_URL}/tournaments/${tournamentId}/assign-groups`, {
     method: "POST",
@@ -198,3 +199,10 @@ export async function bulkUpdateMatchesAPI(
   return res.json();
 }
 
+export async function getTournamentGroupsAPI(tournamentId: number | string) {
+  const res = await fetch(`${API_URL}/tournaments/${tournamentId}/groups`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch groups");
+  return res.json();
+}

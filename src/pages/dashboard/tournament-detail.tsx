@@ -1,87 +1,72 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import {
-  Calendar,
-  Trophy,
-  Users,
-  ArrowLeft,
-  Swords,
-  Clock,
-  Info,
-  Activity,
-} from "lucide-react";
+import { useParams } from "react-router-dom";
+import { Trophy, Loader2, Calendar, Users } from "lucide-react";
 import {
   getTournamentByIdAPI,
   getPublicTournamentTeamsAPI,
 } from "@/api/tournaments";
 import { getPublicTournamentMatchesAPI } from "@/api/matches";
 import { Bracket } from "@/components/tournament/bracket";
-import { MatchList } from "@/components/tournament/match-list";
-import { GroupStandings } from "@/components/tournament/group-standings";
+import { GroupStageBracket } from "@/components/tournament/group-stage-bracket";
 import { TeamRosterDialog } from "@/components/tournament/team-roster-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
-import { getMyTeamAPI } from "@/api/teams";
 
 export function DashboardTournamentDetailPage() {
   const { id } = useParams();
+
   const [tournament, setTournament] = useState<any>(null);
   const [teams, setTeams] = useState<any[]>([]);
   const [matches, setMatches] = useState<any[]>([]);
-  const [myTeam, setMyTeam] = useState<any>(null);
   const [bracketData, setBracketData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Roster Dialog State
+  // Dialog States
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   const [isRosterOpen, setIsRosterOpen] = useState(false);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [tData, teamsData, matchesData, myTeamData] = await Promise.all([
-          getTournamentByIdAPI(id!),
-          getPublicTournamentTeamsAPI(id!),
-          getPublicTournamentMatchesAPI(id!),
-          getMyTeamAPI().catch(() => null),
-        ]);
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const [tData, teamsData, matchesData] = await Promise.all([
+        getTournamentByIdAPI(id!),
+        getPublicTournamentTeamsAPI(id!),
+        getPublicTournamentMatchesAPI(id!),
+      ]);
 
-        setTournament(tData);
-        setTeams(teamsData);
-        setMatches(matchesData);
-        setMyTeam(myTeamData);
-        setBracketData(transformMatchesToBracket(matchesData));
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    if (id) load();
+      setTournament(tData);
+      setTeams(teamsData);
+      setMatches(matchesData);
+
+      const playoffMatches = matchesData.filter(
+        (m: any) => m.stage === "playoffs"
+      );
+      setBracketData(transformMatchesToBracket(playoffMatches));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (id) loadData();
   }, [id]);
 
   const transformMatchesToBracket = (matches: any[]) => {
     if (!matches || matches.length === 0) return [];
-
-    const playoffMatches = matches.filter((m) => !m.group_name);
-
-    if (playoffMatches.length === 0) return [];
-
-    const maxRound = Math.max(...playoffMatches.map((m) => m.round));
+    const maxRound = Math.max(...matches.map((m) => m.round));
     const rounds = [];
     const roundNames = ["Quarterfinals", "Semifinals", "Grand Finals"];
-
     for (let r = 1; r <= maxRound; r++) {
-      const roundMatches = playoffMatches
+      const roundMatches = matches
         .filter((m) => m.round === r)
         .sort((a, b) => a.matchIndex - b.matchIndex);
-
       const nameIndex = roundNames.length - (maxRound - r + 1);
       const name = roundNames[nameIndex] || `Round ${r}`;
-
       rounds.push({
         name: name,
         matches: roundMatches.map((m) => ({
@@ -94,13 +79,13 @@ export function DashboardTournamentDetailPage() {
             name: m.teamAName || "TBD",
             tag: m.teamATag,
             score: m.scoreA,
-            isWinner: m.winnerId && m.winnerId === m.teamAId,
+            isWinner: m.winnerId === m.teamAId,
           },
           team2: {
             name: m.teamBName || "TBD",
             tag: m.teamBTag,
             score: m.scoreB,
-            isWinner: m.winnerId && m.winnerId === m.teamBId,
+            isWinner: m.winnerId === m.teamBId,
           },
         })),
       });
@@ -108,208 +93,122 @@ export function DashboardTournamentDetailPage() {
     return rounds;
   };
 
-  const handleTeamClick = (teamId: number) => {
-    setSelectedTeamId(teamId);
-    setIsRosterOpen(true);
-  };
+  if (isLoading) {
+    return (
+      <div className="flex h-[50vh] w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
+      </div>
+    );
+  }
 
-  if (isLoading)
-    return <div className="text-white p-8">Loading tournament...</div>;
-  if (!tournament)
-    return <div className="text-white p-8">Tournament not found</div>;
+  if (!tournament) {
+    return (
+      <div className="flex h-[50vh] w-full items-center justify-center text-zinc-500">
+        Tournament not found.
+      </div>
+    );
+  }
 
-  // Find my next match
-  const myNextMatch = matches.find(
-    (m) =>
-      (m.teamAId === myTeam?.id || m.teamBId === myTeam?.id) &&
-      m.status === "SCHEDULED"
-  );
-
-  const hasGroups = matches.some((m) => m.group_name);
+  const groupMatches = matches.filter((m: any) => m.stage === "groups");
+  const hasGroups = groupMatches.length > 0;
+  const groupNames = Array.from(
+    new Set(groupMatches.map((m: any) => m.group_name))
+  ).sort();
 
   return (
     <div className="space-y-8 animate-in fade-in pb-10">
       {/* Header */}
       <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-zinc-900/50">
-        {/* Banner Background */}
-        <div className="absolute inset-0 h-48 md:h-64">
-          {tournament.banner_url ? (
-            <img
-              src={tournament.banner_url}
-              className="w-full h-full object-cover opacity-40"
-              alt="Tournament Banner"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-r from-primary/20 to-purple-500/20" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/60 to-transparent" />
-        </div>
-
         <div className="relative pt-24 md:pt-32 px-6 pb-6 flex flex-col md:flex-row items-end gap-6">
-          {/* Logo */}
-          <div className="h-32 w-32 rounded-xl border-4 border-zinc-950 bg-zinc-900 shadow-2xl flex items-center justify-center overflow-hidden shrink-0">
+          <div className="h-32 w-32 rounded-xl bg-zinc-900 border-4 border-zinc-950 flex items-center justify-center overflow-hidden shrink-0">
             {tournament.logo_url ? (
               <img
                 src={tournament.logo_url}
                 className="w-full h-full object-cover"
-                alt="Logo"
               />
             ) : (
               <Trophy className="h-12 w-12 text-zinc-600" />
             )}
           </div>
-
-          {/* Info */}
           <div className="flex-1 mb-2">
             <div className="flex items-center gap-3 mb-2">
-              <Badge className="bg-primary hover:bg-primary/90">
-                {tournament.status}
-              </Badge>
-              {hasGroups && (
-                <Badge variant="outline" className="border-white/20 text-zinc-300">
-                  Group Stage
-                </Badge>
-              )}
-            </div>
-            <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight uppercase mb-2">
-              {tournament.tournament_name}
-            </h1>
-            <div className="flex flex-wrap gap-4 text-zinc-400 text-sm font-medium">
-              <span className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-primary" />
-                {new Date(tournament.start_date).toLocaleDateString()}
-              </span>
-              <span className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-primary" />
-                {teams.length} Teams
-              </span>
-              <span className="flex items-center gap-2">
-                <Trophy className="h-4 w-4 text-primary" />
+              <Badge className="bg-primary">{tournament.status}</Badge>
+              <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
                 {tournament.format?.replace("_", " ")}
               </span>
             </div>
+            <h1 className="text-3xl md:text-5xl font-black text-white uppercase">
+              {tournament.tournament_name}
+            </h1>
+            <div className="flex gap-6 text-zinc-400 text-sm font-medium mt-3">
+              <span className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-zinc-500" />{" "}
+                {new Date(tournament.start_date).toLocaleDateString()}
+              </span>
+              <span className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-zinc-500" /> {teams.length} Teams
+              </span>
+            </div>
           </div>
-
-          {/* Action */}
-          <div className="mb-2">
-            <Link to="/dashboard/tournaments">
-              <Button
-                variant="outline"
-                className="border-white/10 hover:bg-white/5 text-zinc-400"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back
-              </Button>
-            </Link>
+          <div className="mb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-white/10"
+              onClick={loadData}
+            >
+              Refresh Data
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* My Next Match Banner */}
-      {myNextMatch && (
-        <div className="rounded-xl border border-primary/20 bg-primary/5 p-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-10">
-            <Swords className="h-32 w-32 text-primary" />
-          </div>
-          <div className="relative z-10">
-            <h3 className="text-primary font-bold flex items-center gap-2 mb-4">
-              <Clock className="h-5 w-5" /> Your Next Match
-            </h3>
-            <div className="flex flex-col md:flex-row items-center gap-8">
-              <div className="flex items-center gap-4">
-                <div className="text-center">
-                  <span className="block text-2xl font-bold text-white">
-                    {myNextMatch.teamAName}
-                  </span>
-                </div>
-                <span className="text-zinc-500 font-bold text-xl">VS</span>
-                <div className="text-center">
-                  <span className="block text-2xl font-bold text-white">
-                    {myNextMatch.teamBName}
-                  </span>
-                </div>
-              </div>
-              <div className="h-8 w-px bg-primary/20 hidden md:block" />
-              <div className="text-center md:text-left">
-                <p className="text-zinc-300">
-                  {format(new Date(myNextMatch.scheduledAt), "PPP p")}
-                </p>
-                <p className="text-sm text-primary/80 font-bold uppercase">
-                  {myNextMatch.round_name || `Round ${myNextMatch.round}`}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Tabs */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="bg-zinc-900 border border-white/10 w-full justify-start overflow-x-auto">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="matches">Schedule</TabsTrigger>
-          {hasGroups && <TabsTrigger value="standings">Standings</TabsTrigger>}
-          <TabsTrigger value="bracket">Bracket</TabsTrigger>
-          <TabsTrigger value="teams">Participants</TabsTrigger>
+        <TabsList className="bg-zinc-900 border border-white/10 w-full justify-start overflow-x-auto h-12">
+          <TabsTrigger value="overview" className="h-10 px-6">
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="brackets" className="h-10 px-6">
+            Brackets
+          </TabsTrigger>
+          <TabsTrigger value="teams" className="h-10 px-6">
+            Teams
+          </TabsTrigger>
         </TabsList>
 
+        {/* 1. OVERVIEW */}
         <TabsContent value="overview" className="mt-6 space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column: Description */}
-            <div className="lg:col-span-2 space-y-6">
-              <Card className="bg-zinc-900/30 border-white/5">
+            <div className="lg:col-span-2">
+              <Card className="bg-zinc-900/30 border-white/5 h-full">
                 <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Info className="h-5 w-5 text-primary" /> About Tournament
-                  </CardTitle>
+                  <CardTitle className="text-white">About</CardTitle>
                 </CardHeader>
-                <CardContent className="text-zinc-400 leading-relaxed whitespace-pre-line">
+                <CardContent className="text-zinc-400 whitespace-pre-line leading-relaxed">
                   {tournament.tournament_description ||
-                    "No description provided for this tournament."}
+                    "No description provided."}
                 </CardContent>
               </Card>
             </div>
-
-            {/* Right Column: Details & Info */}
-            <div className="space-y-6">
+            <div>
               <Card className="bg-zinc-900/30 border-white/5">
                 <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Activity className="h-5 w-5 text-primary" /> Details
-                  </CardTitle>
+                  <CardTitle className="text-white">Info</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center py-2 border-b border-white/5">
-                    <span className="text-zinc-500 text-sm">Format</span>
-                    <span className="text-white font-medium">
+                  <div className="flex justify-between border-b border-white/5 pb-2">
+                    <span className="text-zinc-500">Region</span>
+                    <span className="text-white">Brazil (BR)</span>
+                  </div>
+                  <div className="flex justify-between border-b border-white/5 pb-2">
+                    <span className="text-zinc-500">Type</span>
+                    <span className="text-white capitalize">
                       {tournament.format?.replace("_", " ")}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center py-2 border-b border-white/5">
-                    <span className="text-zinc-500 text-sm">Start Date</span>
-                    <span className="text-white font-medium">
-                      {new Date(tournament.start_date).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-white/5">
-                    <span className="text-zinc-500 text-sm">Teams</span>
-                    <span className="text-white font-medium">
-                      {teams.length} Registered
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-white/5">
-                    <span className="text-zinc-500 text-sm">Region</span>
-                    <span className="text-white font-medium">
-                      {tournament.region || "Global"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center py-2">
-                    <span className="text-zinc-500 text-sm">Status</span>
-                    <Badge
-                      variant="outline"
-                      className="border-primary/20 text-primary"
-                    >
-                      {tournament.status}
-                    </Badge>
+                  <div className="flex justify-between">
+                    <span className="text-zinc-500">Organizer</span>
+                    <span className="text-white">CSELOL Official</span>
                   </div>
                 </CardContent>
               </Card>
@@ -317,56 +216,141 @@ export function DashboardTournamentDetailPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="matches" className="mt-6">
-          <MatchList matches={matches} />
+        {/* 2. BRACKETS */}
+        <TabsContent value="brackets" className="mt-6">
+          <Tabs
+            defaultValue={hasGroups ? "groups" : "playoffs"}
+            className="w-full"
+          >
+            <TabsList className="bg-transparent border-b border-white/10 w-full justify-start rounded-none h-auto p-0 gap-8">
+              <TabsTrigger
+                value="groups"
+                className="rounded-none border-b-2 border-transparent px-0 pb-3 font-bold uppercase text-zinc-500 data-[state=active]:border-primary data-[state=active]:text-white data-[state=active]:bg-transparent"
+              >
+                Group Stage
+              </TabsTrigger>
+              <TabsTrigger
+                value="playoffs"
+                className="rounded-none border-b-2 border-transparent px-0 pb-3 font-bold uppercase text-zinc-500 data-[state=active]:border-primary data-[state=active]:text-white data-[state=active]:bg-transparent"
+              >
+                Playoffs
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="groups" className="mt-6">
+              {groupMatches.length > 0 ? (
+                <GroupStageBracket
+                  groups={groupNames}
+                  matches={groupMatches}
+                  teams={teams}
+                  isAdmin={false} // Force False for Player View
+                />
+              ) : (
+                <div className="text-center py-20 text-zinc-500 border border-dashed border-white/10 rounded-xl bg-zinc-900/10">
+                  <p>Group stage matches not generated yet.</p>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="playoffs" className="mt-6">
+              {bracketData.length > 0 ? (
+                <div className="overflow-x-auto py-8 bg-zinc-900/20 border border-white/5 rounded-xl">
+                  <Bracket
+                    rounds={bracketData}
+                    // No onMatchClick handler passed here, so it's read-only
+                  />
+                </div>
+              ) : (
+                <div className="text-center py-20 text-zinc-500 border border-dashed border-white/10 rounded-xl bg-zinc-900/10">
+                  Playoff bracket not available yet.
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </TabsContent>
 
-        {hasGroups && (
-          <TabsContent value="standings" className="mt-6">
-            <GroupStandings matches={matches} teams={teams} />
-          </TabsContent>
-        )}
-
-        <TabsContent value="bracket" className="mt-6">
-          {bracketData.length > 0 ? (
-            <Bracket rounds={bracketData} />
-          ) : (
-            <div className="text-center py-20 text-zinc-500 border border-dashed border-white/10 rounded-xl">
-              Bracket hasn't been generated yet or no playoff matches found.
-            </div>
-          )}
-        </TabsContent>
-
+        {/* 3. TEAMS */}
         <TabsContent value="teams" className="mt-6">
           {teams.length === 0 ? (
             <div className="text-center py-20 text-zinc-500 border border-dashed border-white/10 rounded-xl">
               No teams registered yet.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {teams.map((team) => (
                 <Card
                   key={team.id}
-                  onClick={() => handleTeamClick(team.id)}
-                  className="bg-zinc-900/30 border-white/5 hover:border-primary/50 transition-colors group cursor-pointer"
+                  className="bg-zinc-900/40 border-white/5 overflow-hidden flex flex-col hover:border-primary/20 transition-colors"
+                  // Removed OnClick to open roster logic if you wanted pure list view,
+                  // but usually clicking to see full roster is fine for players too.
+                  // I will keep the roster dialog for read-only view.
+                  onClick={() => {
+                    setSelectedTeamId(team.id);
+                    setIsRosterOpen(true);
+                  }}
                 >
-                  <CardContent className="p-4 flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-500 font-bold text-lg overflow-hidden shrink-0">
-                      {team.logo_url ? (
-                        <img
-                          src={team.logo_url}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        team.tag?.[0]
-                      )}
+                  <CardHeader className="bg-white/5 border-b border-white/5 py-3 px-4 cursor-pointer">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded bg-zinc-800 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                        {team.logo_url ? (
+                          <img
+                            src={team.logo_url}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-sm font-bold text-zinc-500">
+                            {team.tag?.[0]}
+                          </span>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div
+                          className="font-bold text-white text-sm truncate"
+                          title={team.name}
+                        >
+                          {team.name}
+                        </div>
+                        <div className="text-xs text-zinc-500 font-mono">
+                          [{team.tag}]
+                        </div>
+                      </div>
                     </div>
-                    <div className="overflow-hidden">
-                      <h4 className="font-bold text-white group-hover:text-primary transition-colors truncate">
-                        {team.name}
-                      </h4>
-                      <p className="text-xs text-zinc-500">{team.tag}</p>
-                    </div>
+                  </CardHeader>
+                  <CardContent className="p-2 space-y-1">
+                    {team.roster && team.roster.length > 0 ? (
+                      team.roster.slice(0, 5).map((member: any) => (
+                        <div
+                          key={member.id}
+                          className="flex items-center gap-2 p-1.5 rounded hover:bg-white/5 transition-colors"
+                        >
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={member.avatar_url} />
+                            <AvatarFallback className="bg-zinc-800 text-[9px] text-zinc-400">
+                              {member.nickname?.[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="w-10 shrink-0">
+                            <span className="text-[10px] font-mono text-zinc-500 uppercase font-bold">
+                              {member.primary_role || "N/A"}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0 flex items-center gap-1">
+                            <span className="text-xs text-zinc-300 truncate">
+                              {member.riot_id || member.nickname}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center text-zinc-600 text-xs py-4 italic">
+                        Roster empty.
+                      </div>
+                    )}
+                    {team.roster && team.roster.length > 5 && (
+                      <div className="text-center text-[10px] text-zinc-600 pt-1">
+                        +{team.roster.length - 5} more...
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
@@ -375,6 +359,7 @@ export function DashboardTournamentDetailPage() {
         </TabsContent>
       </Tabs>
 
+      {/* --- Read Only Roster Dialog --- */}
       <TeamRosterDialog
         teamId={selectedTeamId}
         isOpen={isRosterOpen}

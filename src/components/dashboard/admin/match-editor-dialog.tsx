@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Swords, Save, Loader2, RotateCcw } from "lucide-react";
+import { Swords, Save, Loader2, RotateCcw, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea"; // Ensure you have this component
 import {
   Dialog,
   DialogContent,
@@ -32,7 +33,10 @@ type Match = {
   scoreB: number;
   scheduledAt: string;
   status: "scheduled" | "live" | "completed";
-  bestOf: number; // NEW FIELD
+  bestOf: number;
+  metadata?: {
+    notes?: string;
+  };
 };
 
 interface MatchEditorDialogProps {
@@ -62,7 +66,8 @@ export function MatchEditorDialog({
     scoreB: 0,
     scheduledAt: "",
     status: "scheduled",
-    bestOf: 1, // Default
+    bestOf: 1,
+    metadata: { notes: "" },
   });
 
   useEffect(() => {
@@ -79,7 +84,8 @@ export function MatchEditorDialog({
         scheduledAt: matchToEdit.scheduledAt
           ? new Date(matchToEdit.scheduledAt).toISOString().slice(0, 16)
           : "",
-        bestOf: matchToEdit.bestOf || 1, // Load Best Of
+        bestOf: matchToEdit.bestOf || 1,
+        metadata: matchToEdit.metadata || { notes: "" },
       });
     }
   }, [matchToEdit, open]);
@@ -99,7 +105,8 @@ export function MatchEditorDialog({
           ? new Date(formData.scheduledAt).toISOString()
           : null,
         status: formData.status,
-        bestOf: formData.bestOf, // Send to API
+        bestOf: formData.bestOf,
+        metadata: formData.metadata, // Send notes
       });
       toast.success("Match updated successfully");
       onSuccess();
@@ -114,16 +121,21 @@ export function MatchEditorDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-zinc-950 border-white/10 text-white sm:max-w-[500px]">
+      <DialogContent className="bg-zinc-950 border-white/10 text-white sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Swords className="h-5 w-5 text-primary" />
-            Edit Match #{formData.id}
+            Match Manager #{formData.id}
           </DialogTitle>
+          {/* FIX: Added DialogDescription */}
+          <div className="text-sm text-zinc-400">
+            Edit match details, scores, and schedule.
+          </div>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6 py-4">
-          <div className="grid grid-cols-3 gap-4">
+          {/* Status & Schedule */}
+          <div className="grid grid-cols-3 gap-4 p-4 bg-zinc-900/50 rounded-lg border border-white/5">
             <div className="space-y-2">
               <Label className="text-zinc-400 text-xs uppercase font-bold">
                 Status
@@ -166,7 +178,7 @@ export function MatchEditorDialog({
             </div>
             <div className="space-y-2">
               <Label className="text-zinc-400 text-xs uppercase font-bold">
-                Date
+                Date & Time
               </Label>
               <Input
                 type="datetime-local"
@@ -179,13 +191,13 @@ export function MatchEditorDialog({
             </div>
           </div>
 
-          <Separator className="bg-white/10" />
-
+          {/* Teams & Scores */}
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-4">
               {/* Blue Side */}
               <div className="flex-1 space-y-2">
-                <Label className="text-blue-400 text-xs uppercase font-bold">
+                <Label className="text-blue-400 text-xs uppercase font-bold flex items-center gap-2">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>{" "}
                   Blue Side
                 </Label>
                 <Select
@@ -197,7 +209,7 @@ export function MatchEditorDialog({
                     })
                   }
                 >
-                  <SelectTrigger className="bg-zinc-900 border-white/10">
+                  <SelectTrigger className="bg-zinc-900 border-blue-500/30 h-12 text-lg font-bold">
                     <SelectValue placeholder="TBD" />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-900 border-white/10 text-white">
@@ -212,12 +224,12 @@ export function MatchEditorDialog({
               </div>
 
               {/* Swap Button */}
-              <div className="flex items-end pb-1">
+              <div className="flex items-end pb-3">
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="outline"
                   size="icon"
-                  className="h-8 w-8 text-zinc-500 hover:text-white"
+                  className="h-8 w-8 rounded-full border-white/10 hover:bg-white/10"
                   onClick={() =>
                     setFormData({
                       ...formData,
@@ -233,37 +245,11 @@ export function MatchEditorDialog({
                 </Button>
               </div>
 
-              {/* Scores */}
-              <div className="flex items-end gap-2 pb-1">
-                <Input
-                  type="number"
-                  className="w-12 text-center bg-black/40 border-white/10 font-mono text-lg"
-                  value={formData.scoreA}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      scoreA: parseInt(e.target.value),
-                    })
-                  }
-                />
-                <span className="font-bold text-zinc-500 mb-2">:</span>
-                <Input
-                  type="number"
-                  className="w-12 text-center bg-black/40 border-white/10 font-mono text-lg"
-                  value={formData.scoreB}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      scoreB: parseInt(e.target.value),
-                    })
-                  }
-                />
-              </div>
-
               {/* Red Side */}
-              <div className="flex-1 space-y-2">
-                <Label className="text-red-400 text-xs uppercase font-bold">
-                  Red Side
+              <div className="flex-1 space-y-2 text-right">
+                <Label className="text-red-400 text-xs uppercase font-bold flex items-center justify-end gap-2">
+                  Red Side{" "}
+                  <span className="w-2 h-2 bg-red-500 rounded-full"></span>
                 </Label>
                 <Select
                   value={formData.teamBId?.toString() || "null"}
@@ -274,7 +260,7 @@ export function MatchEditorDialog({
                     })
                   }
                 >
-                  <SelectTrigger className="bg-zinc-900 border-white/10">
+                  <SelectTrigger className="bg-zinc-900 border-red-500/30 h-12 text-lg font-bold text-right">
                     <SelectValue placeholder="TBD" />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-900 border-white/10 text-white">
@@ -288,6 +274,56 @@ export function MatchEditorDialog({
                 </Select>
               </div>
             </div>
+
+            {/* Score Inputs */}
+            <div className="flex items-center justify-center gap-6">
+              <Input
+                type="number"
+                className="w-20 h-14 text-center bg-black/40 border-blue-500/50 font-mono text-3xl font-bold focus:border-blue-500"
+                value={formData.scoreA}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    scoreA: parseInt(e.target.value),
+                  })
+                }
+              />
+              <span className="text-2xl font-bold text-zinc-600">-</span>
+              <Input
+                type="number"
+                className="w-20 h-14 text-center bg-black/40 border-red-500/50 font-mono text-3xl font-bold focus:border-red-500"
+                value={formData.scoreB}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    scoreB: parseInt(e.target.value),
+                  })
+                }
+              />
+            </div>
+          </div>
+
+          <Separator className="bg-white/10" />
+
+          {/* Referee Notes / Metadata */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2 text-yellow-500">
+              <AlertTriangle className="h-4 w-4" /> Referee Notes / Penalties
+            </Label>
+            <Textarea
+              className="bg-black/20 border-white/10 min-h-[80px]"
+              placeholder="e.g. Team A penalized for late arrival. Pause due to technical issue."
+              value={formData.metadata?.notes || ""}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  metadata: { ...formData.metadata, notes: e.target.value },
+                })
+              }
+            />
+            <p className="text-xs text-zinc-500">
+              These notes will be visible to players on the match details page.
+            </p>
           </div>
 
           <DialogFooter>
@@ -300,7 +336,7 @@ export function MatchEditorDialog({
             </Button>
             <Button
               type="submit"
-              className="bg-primary font-bold"
+              className="bg-primary font-bold text-primary-foreground"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -308,7 +344,7 @@ export function MatchEditorDialog({
               ) : (
                 <Save className="mr-2 h-4 w-4" />
               )}
-              Save
+              Save Changes
             </Button>
           </DialogFooter>
         </form>
