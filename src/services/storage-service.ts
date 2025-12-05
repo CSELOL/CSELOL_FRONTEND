@@ -1,30 +1,30 @@
-import keycloak from "@/lib/keycloak";
-import { supabase } from "@/lib/supabase"; 
+import { getAccessToken } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 import { v4 as uuidv4 } from "uuid";
 
 const API_URL = "http://localhost:3333/api";
 
-const getAuthHeaders = () => ({
-  "Authorization": `Bearer ${keycloak.token}`,
-});
+const getAuthHeaders = async () => {
+  const token = await getAccessToken();
+  return {
+    ...(token && { "Authorization": `Bearer ${token}` }),
+  };
+};
 
 // --- GENERIC LOCAL UPLOAD FUNCTION ---
 async function uploadToBackend(file: File, folderType: 'team' | 'tournament'): Promise<string> {
   const formData = new FormData();
-  
-  // ---------------------------------------------------------
+
   // 1. APPEND 'TYPE' FIRST (Crucial for Backend to see it)
-  // ---------------------------------------------------------
-  formData.append('type', folderType); 
+  formData.append('type', folderType);
 
   // 2. APPEND 'FILE' SECOND
   formData.append('file', file);
-  
+
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/files/upload`, {
     method: 'POST',
-    headers: {
-        ...getAuthHeaders()
-    },
+    headers,
     body: formData
   });
 
@@ -34,22 +34,12 @@ async function uploadToBackend(file: File, folderType: 'team' | 'tournament'): P
   }
 
   const data = await res.json();
-  return data.url; 
+  return data.url;
 }
 
 /**
- * Uploads a Team Logo to the Local Backend (If you switched this to local)
- * OR keep using Supabase public bucket if that was your preference.
- * Based on previous steps, we are using Supabase Public for logos, but here is the Local version if needed:
+ * Uploads a Team Logo to Supabase public bucket
  */
-/* 
-export async function uploadLogo(file: File): Promise<string> {
-  if (!file.type.startsWith("image/")) throw new Error("Only images allowed");
-  return uploadToBackend(file, 'team'); 
-}
-*/
-
-// KEEPING SUPABASE FOR TEAM LOGOS (As per your previous instruction)
 export async function uploadLogo(file: File): Promise<string> {
   if (!file.type.startsWith("image/")) {
     throw new Error("Only image files are allowed.");
@@ -60,7 +50,7 @@ export async function uploadLogo(file: File): Promise<string> {
   const filePath = `team-logos/${fileName}`;
 
   const { error } = await supabase.storage
-    .from("public-assets") 
+    .from("public-assets")
     .upload(filePath, file);
 
   if (error) {
@@ -77,18 +67,16 @@ export async function uploadLogo(file: File): Promise<string> {
 
 /**
  * Uploads Tournament Assets (Banner/Logo) to the LOCAL BACKEND.
- * This uses the corrected order above.
  */
-export async function uploadTournamentAsset(file: File, type: 'banner' | 'logo'): Promise<string> {
+export async function uploadTournamentAsset(file: File, _type: 'banner' | 'logo'): Promise<string> {
   if (!file.type.startsWith("image/")) {
     throw new Error("Only image files are allowed.");
   }
-  // We use 'tournament' folder for both banners and logos on the backend
   return uploadToBackend(file, 'tournament');
 }
 
 /**
- * Deletes a file via the Local Backend API.
+ * Deletes a file via the Local Backend API or Supabase.
  */
 export async function deleteAsset(fullUrl: string) {
   if (!fullUrl) return;
@@ -96,31 +84,32 @@ export async function deleteAsset(fullUrl: string) {
   // Check if it's a local URL
   if (fullUrl.includes(API_URL.replace('/api', ''))) {
     try {
-        const res = await fetch(`${API_URL}/files/delete`, {
-            method: 'DELETE',
-            headers: {
-                "Content-Type": "application/json",
-                ...getAuthHeaders()
-            },
-            body: JSON.stringify({ fileUrl: fullUrl })
-        });
+      const headers = await getAuthHeaders();
+      const res = await fetch(`${API_URL}/files/delete`, {
+        method: 'DELETE',
+        headers: {
+          "Content-Type": "application/json",
+          ...headers
+        },
+        body: JSON.stringify({ fileUrl: fullUrl })
+      });
 
-        if (!res.ok) console.error("Failed to delete file on backend");
+      if (!res.ok) console.error("Failed to delete file on backend");
     } catch (error) {
-        console.error("Network error deleting file", error);
+      console.error("Network error deleting file", error);
     }
   }
-  // Handle Supabase Deletion (if needed)
+  // Handle Supabase Deletion
   else if (fullUrl.includes("supabase")) {
     const path = fullUrl.split("/public-assets/")[1];
     if (path) {
-       await supabase.storage.from("public-assets").remove([path]);
+      await supabase.storage.from("public-assets").remove([path]);
     }
   }
 }
 
 /**
- * Uploads a PRIVATE payment proof (Supabase).
+ * Uploads a PRIVATE payment proof to Supabase.
  */
 export async function uploadPaymentProof(file: File): Promise<string> {
   if (!file.type.startsWith("image/") && file.type !== "application/pdf") {
@@ -132,7 +121,7 @@ export async function uploadPaymentProof(file: File): Promise<string> {
   const filePath = `proofs/${fileName}`;
 
   const { data, error } = await supabase.storage
-    .from("private-assets") 
+    .from("private-assets")
     .upload(filePath, file);
 
   if (error) {

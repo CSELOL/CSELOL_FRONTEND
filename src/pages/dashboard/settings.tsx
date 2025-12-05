@@ -83,7 +83,7 @@ export function SettingsPage() {
                 <div className="space-y-2">
                   <Label className="text-zinc-300">Display Name</Label>
                   <Input
-                    defaultValue={user?.username || "Summoner"}
+                    defaultValue={user?.user_metadata?.nickname || user?.email?.split("@")[0] || "Summoner"}
                     className="bg-black/20 border-white/10 text-white"
                   />
                 </div>
@@ -95,7 +95,7 @@ export function SettingsPage() {
                     className="bg-black/20 border-white/10 text-zinc-500 cursor-not-allowed"
                   />
                   <p className="text-[10px] text-zinc-500">
-                    Email managed via Keycloak SSO.
+                    Email managed via Supabase Auth.
                   </p>
                 </div>
               </div>

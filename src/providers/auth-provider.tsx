@@ -3,21 +3,24 @@ import React, {
   useContext,
   useEffect,
   useState,
-  useRef,
+  useCallback,
 } from "react";
-import keycloak from "@/lib/keycloak";
-import type Keycloak from "keycloak-js";
+import { supabase } from "@/lib/supabase";
+import type { User, Session } from "@supabase/supabase-js";
 import { Loader2 } from "lucide-react";
+
+// Login Modal Component
+import { AuthModal } from "@/components/auth/auth-modal";
 
 interface AuthContextType {
   isAuthenticated: boolean;
   token: string | undefined;
-  user: Keycloak.KeycloakProfile | undefined;
+  user: User | null;
+  userRoles: string[];
   login: () => void;
   register: () => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   hasRole: (role: string) => boolean;
-  logDebugInfo: () => void; // <--- NEW DEBUG HELPER
   isInitialized: boolean;
 }
 
@@ -25,111 +28,106 @@ const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isInitialized, setIsInitialized] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<Keycloak.KeycloakProfile | undefined>(
-    undefined
-  );
-  const isRun = useRef(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [userRoles, setUserRoles] = useState<string[]>([]);
+  
+  // Modal state
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<"login" | "register">("login");
+
+  // Fetch user roles from database
+  const fetchUserRoles = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+
+      if (error) {
+        console.error("Failed to fetch user roles:", error);
+        return [];
+      }
+
+      return data?.map((r) => r.role) || [];
+    } catch (err) {
+      console.error("Error fetching roles:", err);
+      return [];
+    }
+  }, []);
 
   useEffect(() => {
-    if (isRun.current) return;
-    isRun.current = true;
-
-    const initKeycloak = async () => {
+    // Get initial session
+    const initAuth = async () => {
       try {
-        const authenticated = await keycloak.init({
-          onLoad: "check-sso",
-          pkceMethod: "S256",
-          checkLoginIframe: false,
-        });
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        
+        setSession(initialSession);
+        setUser(initialSession?.user || null);
 
-        setIsAuthenticated(authenticated);
-
-        if (authenticated) {
-          try {
-            const profile = await keycloak.loadUserProfile();
-            setUser(profile);
-          } catch (profileErr) {
-            console.error("Failed to load user profile", profileErr);
-          }
+        if (initialSession?.user) {
+          const roles = await fetchUserRoles(initialSession.user.id);
+          setUserRoles(roles);
         }
       } catch (error) {
-        console.error("Keycloak Init Failed", error);
+        console.error("Auth Init Failed", error);
       } finally {
         setIsInitialized(true);
       }
     };
 
-    initKeycloak();
+    initAuth();
 
-    // Event Listener: Handle Token Expiration
-    keycloak.onTokenExpired = () => {
-      keycloak
-        .updateToken(30)
-        .then((refreshed) => {
-          if (refreshed) console.log("Token refreshed automatically");
-        })
-        .catch(() => {
-          console.error("Session expired, logging out...");
-          setIsAuthenticated(false);
-          setUser(undefined);
-          keycloak.clearToken();
-        });
-    };
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, newSession) => {
+        console.log("Auth state changed:", event);
+        
+        setSession(newSession);
+        setUser(newSession?.user || null);
 
-    // Interval: Proactive Refresh every 60s
-    const interval = setInterval(() => {
-      if (keycloak.authenticated) {
-        keycloak.updateToken(70).catch(() => {
-          setIsAuthenticated(false);
-          setUser(undefined);
-          keycloak.clearToken();
-        });
+        if (newSession?.user) {
+          const roles = await fetchUserRoles(newSession.user.id);
+          setUserRoles(roles);
+        } else {
+          setUserRoles([]);
+        }
+
+        // Close modal on successful auth
+        if (event === "SIGNED_IN") {
+          setShowAuthModal(false);
+        }
       }
-    }, 60000);
+    );
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [fetchUserRoles]);
 
-  const login = () => keycloak.login();
-  const register = () => keycloak.register();
-  const logout = () => {
-    setIsAuthenticated(false);
-    setUser(undefined);
-    keycloak.logout({ redirectUri: window.location.origin });
+  const login = () => {
+    setAuthModalMode("login");
+    setShowAuthModal(true);
   };
 
-  /**
-   * Checks both Realm Roles AND Client Roles
-   * This fixes the issue where 'admin' was hidden inside 'resource_access'
-   */
-  const hasRole = (role: string) => {
-    if (!keycloak.tokenParsed) return false;
-
-    // 1. Check Realm Roles
-    const hasRealmRole = keycloak.realmAccess?.roles.includes(role);
-
-    // 2. Check Client Roles (Dynamic based on env or hardcoded fallback)
-    const clientId =
-      import.meta.env.VITE_KEYCLOAK_CLIENT_ID || "cselol-frontend";
-    const hasClientRole =
-      keycloak.resourceAccess?.[clientId]?.roles.includes(role);
-
-    return !!(hasRealmRole || hasClientRole);
+  const register = () => {
+    setAuthModalMode("register");
+    setShowAuthModal(true);
   };
 
-  /**
-   * Call this from any component to see exactly what Keycloak sees
-   */
-  const logDebugInfo = () => {
-    console.group("🔐 Keycloak Debug Info");
-    console.log("Authenticated:", keycloak.authenticated);
-    console.log("User Profile:", user);
-    console.log("Token (Parsed):", keycloak.tokenParsed); // <--- Matches your JWT dump
-    console.log("Realm Roles:", keycloak.realmAccess?.roles);
-    console.log("Resource Access:", keycloak.resourceAccess);
-    console.log("Has 'admin' role?", hasRole("admin"));
-    console.groupEnd();
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setSession(null);
+      setUser(null);
+      setUserRoles([]);
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
+  const hasRole = (role: string): boolean => {
+    return userRoles.includes(role);
   };
 
   if (!isInitialized) {
@@ -144,18 +142,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <AuthContext.Provider
       value={{
-        isAuthenticated,
-        token: keycloak.token,
+        isAuthenticated: !!session,
+        token: session?.access_token,
         user,
+        userRoles,
         login,
         register,
         logout,
         hasRole,
-        logDebugInfo,
         isInitialized,
       }}
     >
       {children}
+      
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        initialMode={authModalMode}
+      />
     </AuthContext.Provider>
   );
 };

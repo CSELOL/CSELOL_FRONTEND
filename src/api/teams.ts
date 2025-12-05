@@ -1,11 +1,6 @@
-import keycloak from "@/lib/keycloak";
+import { getAuthHeaders } from "@/lib/auth";
 
 const API_URL = "http://localhost:3333/api";
-
-const getAuthHeaders = () => ({
-  "Content-Type": "application/json",
-  "Authorization": `Bearer ${keycloak.token}`,
-});
 
 export interface Team {
   id: number;
@@ -26,7 +21,7 @@ export interface Team {
 
 export interface TeamMember {
   id: number;
-  keycloak_id: string;
+  user_id: string; // Changed from keycloak_id to user_id for Supabase
   nickname: string;
   avatar_url: string | null;
   team_role: string; // 'CAPTAIN', 'MEMBER'
@@ -34,9 +29,10 @@ export interface TeamMember {
 }
 
 export async function createTeamAPI(data: any) {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/teams`, {
     method: "POST",
-    headers: getAuthHeaders(),
+    headers,
     body: JSON.stringify(data),
   });
 
@@ -54,9 +50,10 @@ export async function getPublicTeamsAPI() {
 }
 
 export async function getMyTeamAPI() {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/teams/my-team`, {
     method: "GET",
-    headers: getAuthHeaders(),
+    headers,
   });
 
   if (res.status === 404) return null; // User has no team
@@ -66,9 +63,10 @@ export async function getMyTeamAPI() {
 }
 
 export async function joinTeamAPI(code: string) {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/teams/join`, {
     method: "POST",
-    headers: getAuthHeaders(),
+    headers,
     body: JSON.stringify({ code }),
   });
 
@@ -80,8 +78,9 @@ export async function joinTeamAPI(code: string) {
 }
 
 export async function getTeamMembersAPI(teamId: number) {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/teams/${teamId}/members`, {
-    headers: getAuthHeaders(),
+    headers,
   });
 
   if (!res.ok) throw new Error("Failed to fetch roster.");
@@ -89,9 +88,10 @@ export async function getTeamMembersAPI(teamId: number) {
 }
 
 export async function refreshTeamInviteCodeAPI(teamId: number) {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/teams/${teamId}/refresh-code`, {
     method: "POST",
-    headers: getAuthHeaders(),
+    headers,
   });
 
   if (res.status === 403) throw new Error("Only captain can refresh code");
@@ -101,9 +101,10 @@ export async function refreshTeamInviteCodeAPI(teamId: number) {
 }
 
 export async function transferTeamOwnershipAPI(teamId: number, newCaptainId: string) {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/teams/${teamId}/transfer-ownership`, {
     method: "POST",
-    headers: getAuthHeaders(),
+    headers,
     body: JSON.stringify({ newCaptainId }),
   });
 
@@ -114,16 +115,18 @@ export async function transferTeamOwnershipAPI(teamId: number, newCaptainId: str
 }
 
 export async function getMyTeamMatchesAPI() {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/teams/my-team/matches`, {
-    headers: getAuthHeaders(),
+    headers,
   });
   if (!res.ok) throw new Error("Failed to fetch team matches");
   return res.json();
 }
 
 export async function getMyTeamTournamentsAPI() {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/teams/my-team/tournaments?_=${Date.now()}`, {
-    headers: getAuthHeaders(),
+    headers,
   });
   if (!res.ok) throw new Error("Failed to fetch team tournaments");
   return res.json();

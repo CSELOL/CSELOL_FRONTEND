@@ -1,15 +1,11 @@
-import keycloak from "@/lib/keycloak";
+import { getAuthHeaders } from "@/lib/auth";
 
-const API_URL = "http://localhost:3333/api"; // Adjust if your port differs
-
-const getAuthHeaders = () => ({
-  "Content-Type": "application/json",
-  "Authorization": `Bearer ${keycloak.token}`,
-});
+const API_URL = "http://localhost:3333/api";
 
 export async function getTournamentMatchesAPI(tournamentId: number | string) {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/tournaments/${tournamentId}/matches`, {
-    headers: getAuthHeaders(),
+    headers,
   });
   if (!res.ok) throw new Error("Failed to fetch matches");
   return res.json();
@@ -22,9 +18,10 @@ export async function getPublicTournamentMatchesAPI(tournamentId: number | strin
 }
 
 export async function createMatchAPI(tournamentId: number | string, data: any) {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/tournaments/${tournamentId}/matches`, {
     method: "POST",
-    headers: getAuthHeaders(),
+    headers,
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error("Failed to create match");
@@ -32,9 +29,10 @@ export async function createMatchAPI(tournamentId: number | string, data: any) {
 }
 
 export async function updateMatchAPI(matchId: number | string, data: any) {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/matches/${matchId}`, {
     method: "PUT",
-    headers: getAuthHeaders(),
+    headers,
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error("Failed to update match");
@@ -42,18 +40,20 @@ export async function updateMatchAPI(matchId: number | string, data: any) {
 }
 
 export async function deleteMatchAPI(matchId: number | string) {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/matches/${matchId}`, {
     method: "DELETE",
-    headers: getAuthHeaders(),
+    headers,
   });
   if (!res.ok) throw new Error("Failed to delete match");
   return true;
 }
 
 export async function generateBracketAPI(tournamentId: number | string) {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/tournaments/${tournamentId}/generate-bracket`, {
     method: "POST",
-    headers: getAuthHeaders(),
+    headers,
   });
   if (!res.ok) {
     const err = await res.json();
@@ -63,9 +63,10 @@ export async function generateBracketAPI(tournamentId: number | string) {
 }
 
 export async function generateGroupMatchesAPI(tournamentId: number | string, payload: { groups: { id: string; name: string; teams: { id: number }[] }[] }) {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/tournaments/${tournamentId}/generate-group-matches`, {
     method: "POST",
-    headers: getAuthHeaders(),
+    headers,
     body: JSON.stringify(payload),
   });
   if (!res.ok) {

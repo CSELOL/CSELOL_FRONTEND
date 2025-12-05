@@ -1,14 +1,6 @@
-import keycloak from "@/lib/keycloak";
+import { getAuthHeaders } from "@/lib/auth";
 
 const API_URL = "http://localhost:3333/api";
-
-// Helper to get headers with Token
-const getAuthHeaders = () => {
-  return {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${keycloak.token}`,
-  };
-};
 
 // --- PUBLIC ROUTES (No Token Check Needed) ---
 
@@ -27,9 +19,10 @@ export async function getTournamentByIdAPI(id: string) {
 // --- PROTECTED ROUTES ---
 
 export async function createTournamentAPI(data: any) {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/tournaments`, {
     method: "POST",
-    headers: getAuthHeaders(),
+    headers,
     body: JSON.stringify(data),
   });
 
@@ -44,9 +37,10 @@ export async function createTournamentAPI(data: any) {
 }
 
 export async function generateGroupStageAPI(id: number | string, config: { groups: number, bestOf: number }) {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/tournaments/${id}/generate-groups`, {
     method: "POST",
-    headers: getAuthHeaders(),
+    headers,
     body: JSON.stringify(config),
   });
 
@@ -58,9 +52,10 @@ export async function generateGroupStageAPI(id: number | string, config: { group
 }
 
 export async function updateTournamentAPI(id: number | string, data: any) {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/tournaments/${id}`, {
     method: "PUT",
-    headers: getAuthHeaders(),
+    headers,
     body: JSON.stringify(data),
   });
 
@@ -73,9 +68,10 @@ export async function updateTournamentAPI(id: number | string, data: any) {
 }
 
 export async function deleteTournamentAPI(id: number | string) {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/tournaments/${id}`, {
     method: "DELETE",
-    headers: getAuthHeaders(),
+    headers,
   });
 
   if (res.status === 401) {
@@ -87,9 +83,10 @@ export async function deleteTournamentAPI(id: number | string) {
 }
 
 export async function registerTeamForTournamentAPI(tournamentId: number | string, paymentProofUrl: string) {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/tournaments/${tournamentId}/register`, {
     method: "POST",
-    headers: getAuthHeaders(),
+    headers,
     body: JSON.stringify({ payment_proof_url: paymentProofUrl }),
   });
 
@@ -99,9 +96,10 @@ export async function registerTeamForTournamentAPI(tournamentId: number | string
 }
 
 export async function withdrawRegistrationAPI(tournamentId: number | string) {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/tournaments/${tournamentId}/register`, {
     method: "DELETE",
-    headers: getAuthHeaders(),
+    headers,
   });
 
   if (!res.ok) {
@@ -112,8 +110,9 @@ export async function withdrawRegistrationAPI(tournamentId: number | string) {
 }
 
 export async function getTournamentTeamsAPI(tournamentId: number | string) {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/tournaments/${tournamentId}/teams`, {
-    headers: getAuthHeaders(),
+    headers,
   });
   if (res.status === 401) throw new Error("Unauthorized");
   if (!res.ok) throw new Error("Failed to fetch teams");
@@ -126,40 +125,36 @@ export async function getPublicTournamentTeamsAPI(tournamentId: number | string)
   return res.json();
 }
 
-// --- FIXED ROUTES BELOW ---
+// --- ADMIN ROUTES ---
 
-// Update Registration Status
 export async function updateRegistrationStatusAPI(regId: number, status: 'APPROVED' | 'REJECTED', rejectionReason?: string) {
-  // Fixed path: added /tournaments/ prefix
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/tournaments/registrations/${regId}/status`, {
     method: 'PUT',
-    headers: getAuthHeaders(),
+    headers,
     body: JSON.stringify({ status, rejection_reason: rejectionReason })
   });
   if (!res.ok) throw new Error("Failed to update status");
   return res.json();
 }
 
-// Get Proof URL
 export async function getPaymentProofAPI(regId: number) {
-  // Fixed path: added /tournaments/ prefix
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/tournaments/registrations/${regId}/proof`, {
-    headers: getAuthHeaders()
+    headers
   });
   if (!res.ok) throw new Error("Failed to get proof URL");
   return res.json();
 }
 
-
-
 export async function assignTeamsToGroupsAPI(
   tournamentId: number | string,
-  // Update the type here to allow 'string | null'
-  assignments: { teamId: number; groupName: string | null }[] 
+  assignments: { teamId: number; groupName: string | null }[]
 ) {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/tournaments/${tournamentId}/assign-groups`, {
     method: "POST",
-    headers: getAuthHeaders(),
+    headers,
     body: JSON.stringify({ assignments }),
   });
 
@@ -174,9 +169,10 @@ export async function createTournamentStageAPI(
   tournamentId: number | string,
   name: string
 ) {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/tournaments/${tournamentId}/stages`, {
     method: "POST",
-    headers: getAuthHeaders(),
+    headers,
     body: JSON.stringify({ name }),
   });
 
@@ -189,9 +185,10 @@ export async function bulkUpdateMatchesAPI(
   matchIds: number[],
   updates: any
 ) {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/tournaments/${tournamentId}/matches/bulk`, {
     method: "PUT",
-    headers: getAuthHeaders(),
+    headers,
     body: JSON.stringify({ matchIds, updates }),
   });
 
@@ -200,8 +197,9 @@ export async function bulkUpdateMatchesAPI(
 }
 
 export async function getTournamentGroupsAPI(tournamentId: number | string) {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/tournaments/${tournamentId}/groups`, {
-    headers: getAuthHeaders(),
+    headers,
   });
   if (!res.ok) throw new Error("Failed to fetch groups");
   return res.json();

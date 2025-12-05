@@ -37,12 +37,13 @@ import {
   transferTeamOwnershipAPI,
   type TeamMember,
 } from "@/api/teams";
-import keycloak from "@/lib/keycloak";
+import { useAuth } from "@/providers/auth-provider";
 import { CreateTeamDialog } from "@/components/dashboard/create-team-dialog";
 import { JoinTeamDialog } from "@/components/dashboard/join-team-dialog";
 import { toast } from "sonner";
 
 export function MyTeamPage() {
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [team, setTeam] = useState<any>(null);
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -100,13 +101,13 @@ export function MyTeamPage() {
     }
   };
 
-  const isCaptain = team?.captain_id === keycloak.subject;
+  const isCaptain = team?.captain_id === user?.id;
 
   // Debugging Roles
   useEffect(() => {
     if (team) {
       console.log("--- Role Debug ---");
-      console.log("My User ID:", keycloak.subject);
+      console.log("My User ID:", user?.id);
       console.log("Team Captain ID:", team.captain_id);
       console.log("Is Captain?", isCaptain);
       console.log("------------------");
@@ -414,11 +415,11 @@ export function MyTeamPage() {
                         </SelectTrigger>
                         <SelectContent className="bg-zinc-900 border-white/10 text-white">
                           {members
-                            .filter((m) => m.keycloak_id !== keycloak.subject)
+                            .filter((m) => m.user_id !== user?.id)
                             .map((member) => (
                               <SelectItem
-                                key={member.keycloak_id}
-                                value={member.keycloak_id}
+                                key={member.user_id}
+                                value={member.user_id}
                               >
                                 {member.nickname}
                               </SelectItem>

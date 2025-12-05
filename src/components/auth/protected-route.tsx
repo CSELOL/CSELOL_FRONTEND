@@ -18,12 +18,14 @@ export function ProtectedRoute({ role }: ProtectedRouteProps) {
     );
   }
 
-  // 1. Not Logged In? Redirect to Keycloak
+  // 1. Not Logged In? Show login modal
   if (!isAuthenticated) {
-    // You can also use <Navigate to="/" /> here if you prefer not to auto-redirect
-    // But for a dashboard, auto-redirecting to login is standard.
     login();
-    return null;
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-zinc-950">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   // 2. Logged In but Wrong Role? (e.g. Player trying to access Admin)

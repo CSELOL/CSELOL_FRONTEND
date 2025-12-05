@@ -126,7 +126,7 @@ export function AdminOverviewPage() {
                 {
                   user: "New User",
                   action: "registered account",
-                  target: "via Keycloak",
+                  target: "via Supabase",
                   time: "3 hours ago",
                 },
               ].map((item, i) => (

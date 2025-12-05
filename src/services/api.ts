@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Create Axios Instance
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000/api",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:3333/api",
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
@@ -10,9 +10,11 @@ export const api = axios.create({
 });
 
 // Request Interceptor (Attach Token)
+import { getAccessToken } from "@/lib/auth";
+
 api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token"); // Or get from Keycloak
+  async (config) => {
+    const token = await getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

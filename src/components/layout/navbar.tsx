@@ -172,7 +172,7 @@ export function Navbar({ className }: { className?: string }) {
           {isAuthenticated ? (
             <>
               <span className="text-sm text-muted-foreground hidden lg:inline-block">
-                {user?.firstName || user?.username}
+                {user?.user_metadata?.nickname || user?.email?.split("@")[0]}
               </span>
               <Button variant="ghost" size="sm" onClick={() => logout()}>
                 Logout
