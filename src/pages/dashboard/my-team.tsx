@@ -75,10 +75,10 @@ export function MyTeamPage() {
     try {
       const res = await refreshTeamInviteCodeAPI(team.id);
       setTeam((prev: any) => ({ ...prev, invite_code: res.invite_code }));
-      toast.success("Invite code refreshed");
+      toast.success("Código de convite atualizado");
     } catch (error) {
       console.error("Failed to refresh code", error);
-      toast.error("Failed to refresh invite code");
+      toast.error("Falha ao atualizar código");
     } finally {
       setIsRefreshing(false);
     }
@@ -89,13 +89,13 @@ export function MyTeamPage() {
     setIsTransferring(true);
     try {
       await transferTeamOwnershipAPI(team.id, selectedNewCaptain);
-      toast.success("Ownership transferred successfully");
+      toast.success("Liderança transferida com sucesso");
       setIsTransferOpen(false);
       // Reload data to reflect changes
       window.location.reload();
     } catch (error) {
       console.error("Failed to transfer ownership", error);
-      toast.error("Failed to transfer ownership");
+      toast.error("Falha ao transferir liderança");
     } finally {
       setIsTransferring(false);
     }
@@ -140,7 +140,7 @@ export function MyTeamPage() {
   if (isLoading) {
     return (
       <div className="pt-20 text-center text-white">
-        <Loader2 className="h-8 w-8 animate-spin mx-auto" /> Loading...
+        <Loader2 className="h-8 w-8 animate-spin mx-auto" /> Carregando...
       </div>
     );
   }
@@ -153,10 +153,10 @@ export function MyTeamPage() {
           <Shield className="h-10 w-10 text-zinc-500" />
         </div>
         <div>
-          <h2 className="text-3xl font-bold text-white">No Team Found</h2>
+          <h2 className="text-3xl font-bold text-white">Time Não Encontrado</h2>
           <p className="text-zinc-400 max-w-md mt-2">
-            You are not part of any team yet. Create your own organization or
-            ask a captain for an invite code.
+            Você não faz parte de nenhum time ainda. Crie sua própria organização ou
+            peça um código de convite a um capitão.
           </p>
         </div>
         <div className="flex gap-4">
@@ -165,7 +165,7 @@ export function MyTeamPage() {
             size="lg"
             className="bg-primary font-bold text-primary-foreground"
           >
-            Create Team
+            Criar Time
           </Button>
           <Button
             onClick={() => setIsJoinOpen(true)}
@@ -173,7 +173,7 @@ export function MyTeamPage() {
             size="lg"
             className="border-white/10 text-white"
           >
-            Join Team
+            Entrar em Time
           </Button>
         </div>
 
@@ -220,12 +220,12 @@ export function MyTeamPage() {
             <p className="text-zinc-400 flex items-center gap-3">
               <span className="text-primary font-bold">[{team.tag}]</span>
               <span className="w-1 h-1 rounded-full bg-zinc-600" />
-              <span>{members.length} Members</span>
+              <span>{members.length} Membros</span>
               {isCaptain && (
                 <>
                   <span className="w-1 h-1 rounded-full bg-zinc-600" />
                   <Badge className="bg-yellow-500/20 text-yellow-200 border-yellow-500/50 hover:bg-yellow-500/30">
-                    You are the Captain
+                    Você é o Capitão
                   </Badge>
                 </>
               )}
@@ -239,10 +239,10 @@ export function MyTeamPage() {
         <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-4 flex items-center gap-4 text-yellow-200">
           <AlertTriangle className="h-5 w-5" />
           <div>
-            <p className="font-bold">Waiting for Approval</p>
+            <p className="font-bold">Aguardando Aprovação</p>
             <p className="text-sm opacity-80">
-              Your team is currently under review. Tournament signups are
-              locked.
+              Seu time está sob análise. Inscrições em torneios estão
+              bloqueadas.
             </p>
           </div>
         </div>
@@ -250,8 +250,8 @@ export function MyTeamPage() {
 
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="bg-zinc-900 border border-white/10">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+          <TabsTrigger value="settings">Configurações</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
@@ -259,14 +259,14 @@ export function MyTeamPage() {
             {/* Left Column: Roster */}
             <div className="lg:col-span-2 space-y-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-white font-bold text-lg">Active Roster</h3>
+                <h3 className="text-white font-bold text-lg">Elenco Ativo</h3>
                 {/* Invite Code Widget */}
                 <div className="flex items-center gap-2 bg-zinc-900 border border-white/10 rounded-full px-1 py-1 pr-3">
                   <div className="bg-zinc-800 rounded-full px-2 py-1 text-xs text-zinc-400 font-mono">
-                    CODE
+                    CÓDIGO
                   </div>
                   <span className="text-sm font-bold text-white font-mono tracking-wider">
-                    {team.invite_code || "Generating..."}
+                    {team.invite_code || "Gerando..."}
                   </span>
                   <button
                     onClick={copyCode}
@@ -335,7 +335,7 @@ export function MyTeamPage() {
                 ))}
                 {members.length === 0 && (
                   <div className="p-8 text-center text-zinc-500">
-                    No members found.
+                    Nenhum membro encontrado.
                   </div>
                 )}
               </div>
@@ -345,10 +345,10 @@ export function MyTeamPage() {
             <div className="space-y-6">
               <div className="p-6 rounded-xl border border-white/10 bg-zinc-900/30">
                 <h3 className="text-zinc-400 text-sm font-bold uppercase mb-4">
-                  About Team
+                  Sobre o Time
                 </h3>
                 <p className="text-zinc-300 leading-relaxed text-sm">
-                  {team.description || "No biography available."}
+                  {team.description || "Nenhuma biografia disponível."}
                 </p>
               </div>
             </div>
@@ -365,22 +365,22 @@ export function MyTeamPage() {
                   </div>
                   <div>
                     <h3 className="text-white font-bold text-lg">
-                      Transfer Ownership
+                      Transferir Liderança
                     </h3>
                     <p className="text-zinc-400 text-sm">
-                      Transfer your captain role to another team member.
+                      Transfira seu cargo de capitão para outro membro.
                     </p>
                   </div>
                 </div>
 
                 <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-6 text-sm text-red-200">
                   <p className="font-bold flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4" /> Warning
+                    <AlertTriangle className="h-4 w-4" /> Aviso
                   </p>
                   <p className="mt-1 opacity-90">
-                    This action is irreversible. Once you transfer ownership, you
-                    will become a regular member and lose all captain
-                    privileges.
+                    Esta ação é irreversível. Uma vez que você transfira a liderança, 
+                    você se tornará um membro regular e perderá todos os privilégios
+                    de capitão.
                   </p>
                 </div>
 
@@ -391,27 +391,27 @@ export function MyTeamPage() {
                       disabled={!isCaptain}
                       className="w-full sm:w-auto"
                     >
-                      Transfer Ownership
+                      Transferir Liderança
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="bg-zinc-950 border-white/10 text-white">
                     <DialogHeader>
-                      <DialogTitle>Transfer Team Ownership</DialogTitle>
+                      <DialogTitle>Transferir Liderança do Time</DialogTitle>
                       <DialogDescription className="text-zinc-400">
-                        Select the new captain from the list below.
+                        Selecione o novo capitão da lista abaixo.
                       </DialogDescription>
                     </DialogHeader>
 
                     <div className="py-4">
                       <label className="text-sm font-medium text-zinc-300 mb-2 block">
-                        New Captain
+                        Novo Capitão
                       </label>
                       <Select
                         onValueChange={setSelectedNewCaptain}
                         value={selectedNewCaptain}
                       >
                         <SelectTrigger className="bg-zinc-900 border-white/10 text-white">
-                          <SelectValue placeholder="Select a member" />
+                          <SelectValue placeholder="Selecione um membro" />
                         </SelectTrigger>
                         <SelectContent className="bg-zinc-900 border-white/10 text-white">
                           {members
@@ -434,7 +434,7 @@ export function MyTeamPage() {
                         onClick={() => setIsTransferOpen(false)}
                         className="text-zinc-400 hover:text-white"
                       >
-                        Cancel
+                        Cancelar
                       </Button>
                       <Button
                         variant="destructive"
@@ -444,10 +444,10 @@ export function MyTeamPage() {
                         {isTransferring ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
-                            Transferring...
+                            Transferindo...
                           </>
                         ) : (
-                          "Confirm Transfer"
+                          "Confirmar Transferência"
                         )}
                       </Button>
                     </DialogFooter>

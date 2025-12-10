@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Trophy,
   Users,
@@ -154,7 +155,7 @@ export function TournamentsHubPage() {
       const path = await uploadPaymentProof(file);
       setProofPath(path);
     } catch (err) {
-      alert("Failed to upload proof. Please try again.");
+      toast.error("Falha ao enviar comprovante. Tente novamente.");
       console.error(err);
     } finally {
       setIsUploadingProof(false);
@@ -165,7 +166,7 @@ export function TournamentsHubPage() {
     if (!selectedTournament) return;
 
     if (!proofPath) {
-      alert("Please upload a proof of payment to continue.");
+      toast.error("Por favor, envie um comprovante de pagamento para continuar.");
       return;
     }
 
@@ -173,16 +174,14 @@ export function TournamentsHubPage() {
 
     try {
       await registerTeamForTournamentAPI(selectedTournament.id, proofPath);
-      alert(
-        "Success! Your team has been registered. Waiting for admin approval."
-      );
+      toast.success("Sucesso! Seu time foi registrado. Aguardando aprovação do admin.");
       setIsRegisterOpen(false);
       if (myTeam) {
         const myT = await getMyTeamTournamentsAPI();
         setMyTournaments(myT);
       }
     } catch (error: any) {
-      alert(error.message || "Failed to register.");
+      toast.error(error.message || "Falha ao registrar.");
     } finally {
       setIsRegistering(false);
     }
@@ -191,7 +190,7 @@ export function TournamentsHubPage() {
   if (isLoading) {
     return (
       <div className="pt-20 text-center text-white">
-        <Loader2 className="h-8 w-8 animate-spin mx-auto" /> Loading...
+        <Loader2 className="h-8 w-8 animate-spin mx-auto" /> Carregando...
       </div>
     );
   }
@@ -226,40 +225,37 @@ export function TournamentsHubPage() {
 
     const [showReason, setShowReason] = useState(false);
     const [isWithdrawing, setIsWithdrawing] = useState(false);
+    const [showDismissDialog, setShowDismissDialog] = useState(false);
+    const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
 
-    const handleDismissRejection = async (e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (!confirm("Are you sure you want to dismiss this rejection? You will be able to apply again.")) return;
-      
+    const handleDismissRejection = async () => {
       setIsWithdrawing(true);
       try {
         await withdrawRegistrationAPI(t.id);
-        // Remove from local state to allow re-registration
         setMyTournaments((prev) => prev.filter((mt) => mt.id !== t.id));
         setShowReason(false);
-        toast.success("Registration dismissed.");
+        toast.success("Inscrição dispensada.");
       } catch (error) {
         console.error(error);
-        toast.error("Failed to dismiss registration.");
+        toast.error("Falha ao dispensar inscrição.");
       } finally {
         setIsWithdrawing(false);
+        setShowDismissDialog(false);
       }
     };
 
-    const handleWithdraw = async (e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (!confirm("Are you sure you want to withdraw your application?")) return;
-
+    const handleWithdraw = async () => {
       setIsWithdrawing(true);
       try {
         await withdrawRegistrationAPI(t.id);
         setMyTournaments((prev) => prev.filter((mt) => mt.id !== t.id));
-        toast.success("Application withdrawn.");
+        toast.success("Inscrição cancelada.");
       } catch (error) {
         console.error(error);
-        toast.error("Failed to withdraw application.");
+        toast.error("Falha ao cancelar inscrição.");
       } finally {
         setIsWithdrawing(false);
+        setShowWithdrawDialog(false);
       }
     };
 
@@ -319,7 +315,7 @@ export function TournamentsHubPage() {
           <CardContent className="flex-1 pt-2">
             <div className="flex items-center gap-4 text-sm text-zinc-400">
               <div className="flex items-center gap-1">
-                <Trophy className="h-4 w-4 text-yellow-500" /> Prize Pool Pending
+                <Trophy className="h-4 w-4 text-yellow-500" /> Premiação em Breve
               </div>
             </div>
           </CardContent>
@@ -332,16 +328,16 @@ export function TournamentsHubPage() {
                     disabled
                     className="w-full bg-yellow-500/10 text-yellow-500 border border-yellow-500/20"
                   >
-                     Pending Approval
+                     Aguardando Aprovação
                   </Button>
                   <Button 
                     variant="ghost" 
                     size="sm" 
                     className="w-full text-zinc-500 hover:text-red-400 hover:bg-red-500/10"
-                    onClick={handleWithdraw}
+                    onClick={(e) => { e.stopPropagation(); setShowWithdrawDialog(true); }}
                     disabled={isWithdrawing}
                   >
-                    {isWithdrawing ? <Loader2 className="h-3 w-3 animate-spin" /> : "Withdraw Application"}
+                    {isWithdrawing ? <Loader2 className="h-3 w-3 animate-spin" /> : "Cancelar Inscrição"}
                   </Button>
                 </div>
               ) : status === "REJECTED" || status === "rejected" ? (
@@ -353,11 +349,11 @@ export function TournamentsHubPage() {
                     setShowReason(true);
                   }}
                 >
-                  <AlertCircle className="mr-2 h-4 w-4" /> Registration Rejected
+                  <AlertCircle className="mr-2 h-4 w-4" /> Inscrição Rejeitada
                 </Button>
               ) : (
                 <Button className="w-full bg-zinc-800 text-white hover:bg-zinc-700">
-                  View Dashboard <ArrowRight className="ml-2 h-4 w-4" />
+                  Ver Painel <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               )
             ) : t.allow_signups ? (
@@ -365,14 +361,14 @@ export function TournamentsHubPage() {
                 onClick={(e) => handleRegisterClick(t, e)}
                 className="w-full bg-primary text-primary-foreground font-bold"
               >
-                Register Team
+                Registrar Time
               </Button>
             ) : (
               <Button
                 variant="outline"
                 className="w-full border-white/10 text-zinc-500"
               >
-                View Details
+                Ver Detalhes
               </Button>
             )}
           </CardFooter>
@@ -383,35 +379,60 @@ export function TournamentsHubPage() {
           <DialogContent className="bg-zinc-950 border-white/10 text-white">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-red-500">
-                <AlertCircle className="h-5 w-5" /> Registration Rejected
+                <AlertCircle className="h-5 w-5" /> Inscrição Rejeitada
               </DialogTitle>
               <DialogDescription className="text-zinc-400">
-                Your registration for <strong>{t.tournament_name}</strong> was
-                rejected by the administrators.
+                Sua inscrição para <strong>{t.tournament_name}</strong> foi
+                rejeitada pelos administradores.
               </DialogDescription>
             </DialogHeader>
 
             <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 my-4">
-              <h4 className="text-sm font-bold text-red-400 mb-1">Reason:</h4>
+              <h4 className="text-sm font-bold text-red-400 mb-1">Motivo:</h4>
               <p className="text-sm text-red-200">
-                {rejectionReason || "No specific reason provided."}
+                {rejectionReason || "Nenhum motivo específico fornecido."}
               </p>
             </div>
 
             <DialogFooter>
               <Button variant="ghost" onClick={() => setShowReason(false)}>
-                Close
+                Fechar
               </Button>
               <Button 
-                onClick={handleDismissRejection}
+                onClick={() => setShowDismissDialog(true)}
                 disabled={isWithdrawing}
                 variant="destructive"
               >
-                {isWithdrawing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Dismiss & Try Again"}
+                Dispensar & Tentar Novamente
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Confirm Dialogs */}
+        <ConfirmDialog
+          open={showWithdrawDialog}
+          onOpenChange={setShowWithdrawDialog}
+          title="Cancelar Inscrição"
+          description="Tem certeza de que deseja cancelar sua inscrição no torneio? Você pode se inscrever novamente mais tarde se as inscrições ainda estiverem abertas."
+          confirmText={isWithdrawing ? "Cancelando..." : "Cancelar Inscrição"}
+          cancelText="Voltar"
+          variant="warning"
+          onConfirm={handleWithdraw}
+          loading={isWithdrawing}
+        />
+
+        <ConfirmDialog
+          open={showDismissDialog}
+          onOpenChange={setShowDismissDialog}
+          title="Dispensar Rejeição"
+          description="Tem certeza de que deseja dispensar esta rejeição? Você poderá se inscrever novamente se as inscrições ainda estiverem abertas."
+          confirmText={isWithdrawing ? "Dispensando..." : "Dispensar & Tentar Novamente"}
+          cancelText="Voltar"
+          variant="destructive"
+          onConfirm={handleDismissRejection}
+          loading={isWithdrawing}
+        />
       </>
     );
   };
@@ -420,9 +441,9 @@ export function TournamentsHubPage() {
     <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white">Tournaments Hub</h1>
+          <h1 className="text-3xl font-bold text-white">Central de Torneios</h1>
           <p className="text-zinc-400">
-            Find and register for upcoming tournaments.
+            Encontre e registre-se em próximos torneios.
           </p>
         </div>
         <div className="flex gap-2">
@@ -435,13 +456,13 @@ export function TournamentsHubPage() {
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              "Refresh Data"
+              "Atualizar Dados"
             )}
           </Button>
           {!myTeam && (
             <Button asChild variant="outline" className="border-white/10">
               <Link to="/dashboard/team">
-                <Users className="mr-2 h-4 w-4" /> Create Team to Play
+                <Users className="mr-2 h-4 w-4" /> Criar Time para Jogar
               </Link>
             </Button>
           )}
@@ -453,7 +474,7 @@ export function TournamentsHubPage() {
         {activeTournament && (
           <div className="space-y-4">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <Swords className="h-5 w-5 text-primary" /> Your Active Tournament
+              <Swords className="h-5 w-5 text-primary" /> Seu Torneio Ativo
             </h2>
             <div className="relative overflow-hidden rounded-xl border border-primary/30 bg-zinc-900 group">
               {/* Banner Background */}
@@ -504,7 +525,7 @@ export function TournamentsHubPage() {
                       }
                       className="font-bold bg-primary hover:bg-primary/90"
                     >
-                      Go to Command Center <ArrowRight className="ml-2 h-5 w-5" />
+                      Ir para Central de Comando <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   </div>
                 </div>
@@ -516,9 +537,9 @@ export function TournamentsHubPage() {
         {/* --- Main List (Tabs) --- */}
         <Tabs defaultValue="open" className="w-full">
           <TabsList className="bg-zinc-900 border border-white/10">
-            <TabsTrigger value="open">Upcoming</TabsTrigger>
-            <TabsTrigger value="ongoing">Ongoing</TabsTrigger>
-            <TabsTrigger value="past">Past Events</TabsTrigger>
+            <TabsTrigger value="open">Futuros</TabsTrigger>
+            <TabsTrigger value="ongoing">Em Andamento</TabsTrigger>
+            <TabsTrigger value="past">Passados</TabsTrigger>
           </TabsList>
 
           <TabsContent value="open" className="mt-8">
@@ -529,7 +550,7 @@ export function TournamentsHubPage() {
                 ))
               ) : (
                 <div className="col-span-full text-center py-12 text-zinc-500 border border-dashed border-white/10 rounded-lg">
-                  No tournaments open for registration.
+                  Nenhum torneio aberto para inscrição.
                 </div>
               )}
             </div>
@@ -543,7 +564,7 @@ export function TournamentsHubPage() {
                 ))
               ) : (
                 <div className="col-span-full text-center py-12 text-zinc-500 border border-dashed border-white/10 rounded-lg">
-                  No ongoing tournaments.
+                  Nenhum torneio em andamento.
                 </div>
               )}
             </div>
@@ -557,7 +578,7 @@ export function TournamentsHubPage() {
                 ))
               ) : (
                 <div className="col-span-full text-center py-12 text-zinc-500 border border-dashed border-white/10 rounded-lg">
-                  No past tournaments found.
+                  Nenhum torneio passado encontrado.
                 </div>
               )}
             </div>
@@ -569,9 +590,9 @@ export function TournamentsHubPage() {
       <Dialog open={isRegisterOpen} onOpenChange={setIsRegisterOpen}>
         <DialogContent className="bg-zinc-950 border-white/10 text-white sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Confirm Registration</DialogTitle>
+            <DialogTitle>Confirmar Inscrição</DialogTitle>
             <DialogDescription className="text-zinc-400">
-              Registering <strong>{myTeam?.name}</strong> for{" "}
+              Registrando <strong>{myTeam?.name}</strong> para{" "}
               <strong>{selectedTournament?.tournament_name}</strong>.
             </DialogDescription>
           </DialogHeader>
@@ -581,14 +602,14 @@ export function TournamentsHubPage() {
             <div className="flex items-start gap-3 p-3 rounded bg-blue-500/10 border border-blue-500/20 text-sm text-blue-200">
               <AlertCircle className="h-5 w-5 shrink-0" />
               <p>
-                Ensure your team has at least <strong>5 members</strong>. The
-                system will reject incomplete teams.
+                Garanta que seu time tenha pelo menos <strong>5 membros</strong>. O
+                sistema rejeitará times incompletos.
               </p>
             </div>
 
             {/* 2. Payment Proof Upload */}
             <div className="space-y-2">
-              <Label className="text-zinc-300">Payment Proof (Required)</Label>
+              <Label className="text-zinc-300">Comprovante de Pagamento (Obrigatório)</Label>
               <div className="flex items-center gap-4">
                 {!proofPath ? (
                   <div className="relative flex items-center justify-center w-full h-24 border-2 border-dashed border-white/20 rounded-lg hover:bg-white/5 cursor-pointer transition-colors bg-black/20">
@@ -599,7 +620,7 @@ export function TournamentsHubPage() {
                         <Upload className="h-6 w-6" />
                       )}
                       <span className="text-xs uppercase font-bold">
-                        Upload Receipt (Image/PDF)
+                        Enviar Recibo (Imagem/PDF)
                       </span>
                     </div>
                     <input
@@ -615,7 +636,7 @@ export function TournamentsHubPage() {
                     <div className="flex items-center gap-2">
                       <FileText className="h-5 w-5" />
                       <span className="text-sm font-bold">
-                        Proof Uploaded Successfully
+                        Comprovante Enviado com Sucesso
                       </span>
                     </div>
                     <button
@@ -628,7 +649,7 @@ export function TournamentsHubPage() {
                 )}
               </div>
               <p className="text-[10px] text-zinc-500">
-                Please upload a screenshot of the transfer (Pix/Bank) to{" "}
+                Por favor, faça upload de um print da transferência (Pix/Banco) para{" "}
                 <strong>payments@cselol.com</strong>
               </p>
             </div>
@@ -636,14 +657,14 @@ export function TournamentsHubPage() {
             <div className="flex items-center gap-2 text-sm text-zinc-500 justify-center">
               <CheckCircle2 className="h-4 w-4 text-emerald-500" />
               <span>
-                Captain Verified: {myTeam?.created_by_user_id ? "Yes" : "No"}
+                Capitão Verificado: {myTeam?.created_by_user_id ? "Sim" : "Não"}
               </span>
             </div>
           </div>
 
           <DialogFooter>
             <Button variant="ghost" onClick={() => setIsRegisterOpen(false)}>
-              Cancel
+              Cancelar
             </Button>
             <Button
               onClick={processRegistration}
@@ -653,7 +674,7 @@ export function TournamentsHubPage() {
               {isRegistering ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                "Confirm & Register"
+                "Confirmar & Registrar"
               )}
             </Button>
           </DialogFooter>

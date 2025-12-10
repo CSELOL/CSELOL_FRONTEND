@@ -15,29 +15,29 @@ import { useAuth } from "@/providers/auth-provider";
 
 // 1. Standard Player Links
 const playerItems = [
-  { title: "Overview", href: "/dashboard", icon: LayoutDashboard, exact: true },
-  { title: "My Team", href: "/dashboard/team", icon: Users },
-  { title: "Tournaments", href: "/dashboard/tournaments", icon: Trophy },
-  { title: "My Matches", href: "/dashboard/matches", icon: Swords },
-  { title: "Settings", href: "/dashboard/settings", icon: Settings },
+  { title: "Visão Geral", href: "/dashboard", icon: LayoutDashboard, exact: true },
+  { title: "Meu Time", href: "/dashboard/team", icon: Users },
+  { title: "Torneios", href: "/dashboard/tournaments", icon: Trophy },
+  { title: "Minhas Partidas", href: "/dashboard/matches", icon: Swords },
+  { title: "Configurações", href: "/dashboard/settings", icon: Settings },
 ];
 
 // 2. Admin Links
 const adminItems = [
   {
-    title: "Admin Overview",
+    title: "Visão Geral Admin",
     href: "/dashboard/admin",
     icon: ShieldAlert,
     exact: true,
   },
   {
-    title: "Manage Tournaments",
+    title: "Gerenciar Torneios",
     href: "/dashboard/admin/tournaments",
     icon: Trophy,
   },
-  { title: "User Management", href: "/dashboard/admin/users", icon: Users },
+  { title: "Gerenciar Usuários", href: "/dashboard/admin/users", icon: Users },
   {
-    title: "System Settings",
+    title: "Configurações do Sistema",
     href: "/dashboard/admin/settings",
     icon: Sliders,
   },
@@ -57,7 +57,7 @@ export function DashboardLayout() {
         {/* PLAYER ZONE */}
         <div className="flex flex-col gap-2 p-4">
           <div className="mb-2 px-4 text-xs font-bold uppercase tracking-wider text-zinc-500">
-            Player Zone
+            Área do Jogador
           </div>
 
           {playerItems.map((item) => {
@@ -93,7 +93,7 @@ export function DashboardLayout() {
         {isAdmin && (
           <div className="flex flex-col gap-2 p-4 pt-0">
             <div className="my-2 px-4 text-xs font-bold uppercase tracking-wider text-red-500 flex items-center gap-2">
-              Admin Panel
+              Painel Admin
             </div>
 
             {adminItems.map((item) => {
@@ -133,7 +133,7 @@ export function DashboardLayout() {
             onClick={() => logout()}
           >
             <LogOut className="mr-2 h-4 w-4" />
-            Logout
+            Sair
           </Button>
         </div>
       </aside>

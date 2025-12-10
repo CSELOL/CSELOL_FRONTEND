@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Plus,
   Trophy,
@@ -64,6 +65,8 @@ export function TournamentManagementTab({ tournamentId }: ManagementTabProps) {
   const [isMatchCreatorOpen, setIsMatchCreatorOpen] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
   const [isMatchEditorOpen, setIsMatchEditorOpen] = useState(false);
+  const [showScheduleConfirm, setShowScheduleConfirm] = useState(false);
+  const [showBracketConfirm, setShowBracketConfirm] = useState(false);
 
   // Derived state for filtering matches
   const groupMatches = matches.filter((m: any) => m.stage === "groups");
@@ -100,7 +103,7 @@ export function TournamentManagementTab({ tournamentId }: ManagementTabProps) {
       }
     } catch (error) {
       console.error(error);
-      toast.error("Failed to load tournament data");
+      toast.error("Falha ao carregar dados do torneio");
     } finally {
       setIsLoading(false);
     }
@@ -116,7 +119,7 @@ export function TournamentManagementTab({ tournamentId }: ManagementTabProps) {
     // 1. Validation: Are there groups?
     if (groupData.groups.length === 0) {
       toast.error(
-        "No groups found. Please assign teams and click 'Save Assignments' first."
+        "Nenhum grupo encontrado. Por favor atribua times e clique em 'Salvar Atribuições' primeiro."
       );
       return;
     }
@@ -125,48 +128,50 @@ export function TournamentManagementTab({ tournamentId }: ManagementTabProps) {
     const invalidGroups = groupData.groups.filter((g) => g.teams.length < 2);
     if (invalidGroups.length > 0) {
       toast.error(
-        `Cannot generate: ${invalidGroups
+        `Não é possível gerar: ${invalidGroups
           .map((g) => g.name)
-          .join(", ")} have less than 2 teams.`
+          .join(", ")} têm menos de 2 times.`
       );
       return;
     }
 
     if (
-      !confirm(
-        "This will wipe existing group matches and generate a new Round Robin schedule. Continue?"
-      )
-    )
+      groupData.groups.length === 0 ||
+      groupData.groups.some((g) => g.teams.length < 2)
+    ) {
+      // Already validated above, just for safety
       return;
+    }
 
     setIsGenerating(true);
     try {
       await generateGroupMatchesAPI(tournamentId, { groups: groupData.groups });
-      toast.success("Schedule Generated Successfully!");
+      toast.success("Calendário Gerado com Sucesso!");
 
       // Reload to get the new matches
       await loadData();
       setActiveView("matches");
     } catch (error) {
       console.error(error);
-      toast.error("Failed to generate schedule");
+      toast.error("Falha ao gerar calendário");
     } finally {
       setIsGenerating(false);
+      setShowScheduleConfirm(false);
     }
   };
 
   const handleGenerateBracket = async () => {
-    if (!confirm("Overwrite playoffs bracket?")) return;
     setIsGenerating(true);
     try {
       await generateBracketAPI(tournamentId);
-      toast.success("Bracket Generated!");
+      toast.success("Chave Gerada!");
       await loadData();
       setActiveView("matches");
     } catch (e) {
-      toast.error("Failed to generate bracket");
+      toast.error("Falha ao gerar chave");
     } finally {
       setIsGenerating(false);
+      setShowBracketConfirm(false);
     }
   };
 
@@ -193,13 +198,13 @@ export function TournamentManagementTab({ tournamentId }: ManagementTabProps) {
           className="w-full max-w-lg"
         >
           <TabsList className="bg-zinc-900 border border-white/10 w-full grid grid-cols-3">
-            <TabsTrigger value="groups">Groups Setup</TabsTrigger>
-            <TabsTrigger value="playoffs">Playoffs Setup</TabsTrigger>
+            <TabsTrigger value="groups">Grupos</TabsTrigger>
+            <TabsTrigger value="playoffs">Playoffs</TabsTrigger>
             <TabsTrigger
               value="matches"
               className="data-[state=active]:bg-primary data-[state=active]:text-black font-bold"
             >
-              Matches Console
+              Partidas
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -209,7 +214,7 @@ export function TournamentManagementTab({ tournamentId }: ManagementTabProps) {
             variant="ghost"
             size="icon"
             onClick={loadData}
-            title="Refresh Data"
+            title="Atualizar Dados"
           >
             <RefreshCw className="h-4 w-4" />
           </Button>
@@ -218,7 +223,7 @@ export function TournamentManagementTab({ tournamentId }: ManagementTabProps) {
             size="sm"
             onClick={() => setIsMatchCreatorOpen(true)}
           >
-            <Plus className="h-4 w-4 mr-2" /> Custom Match
+            <Plus className="h-4 w-4 mr-2" /> Partida Personalizada
           </Button>
         </div>
       </div>
@@ -233,19 +238,30 @@ export function TournamentManagementTab({ tournamentId }: ManagementTabProps) {
               </div>
               <div>
                 <h3 className="text-blue-100 font-bold">
-                  Step 1: Assign & Save
+                  Passo 1: Atribuir & Salvar
                 </h3>
                 <p className="text-xs text-blue-200/60">
-                  Drag teams below. Click{" "}
-                  <strong className="text-white">Save Assignments</strong>{" "}
-                  inside the box.
+                  Arraste os times abaixo. Clique em{" "}
+                  <strong className="text-white">Salvar Atribuições</strong>{" "}
+                  dentro da caixa.
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               <Button
-                onClick={handleGenerateGroupSchedule}
+                onClick={() => {
+                  if (groupData.groups.length === 0) {
+                    toast.error("Nenhum grupo encontrado. Por favor atribua times e clique em 'Salvar Atribuições' primeiro.");
+                    return;
+                  }
+                  const invalidGroups = groupData.groups.filter((g) => g.teams.length < 2);
+                  if (invalidGroups.length > 0) {
+                    toast.error(`Não é possível gerar: ${invalidGroups.map((g) => g.name).join(", ")} têm menos de 2 times.`);
+                    return;
+                  }
+                  setShowScheduleConfirm(true);
+                }}
                 disabled={isGenerating}
                 className="bg-blue-600 hover:bg-blue-500 text-white font-bold whitespace-nowrap"
               >
@@ -254,7 +270,7 @@ export function TournamentManagementTab({ tournamentId }: ManagementTabProps) {
                 ) : (
                   <Calendar className="mr-2 h-4 w-4" />
                 )}
-                Step 2: Generate Schedule
+                Passo 2: Gerar Calendário
               </Button>
             </div>
           </div>
@@ -276,13 +292,13 @@ export function TournamentManagementTab({ tournamentId }: ManagementTabProps) {
               <Trophy className="h-8 w-8 text-zinc-600" />
             </div>
             <h3 className="text-xl font-bold text-white mb-2">
-              Generate Playoffs Bracket
+              Gerar Chave de Playoffs
             </h3>
             <p className="text-zinc-400 text-sm mb-8 max-w-md">
-              Generates a single-elimination bracket.
+              Gera uma chave de eliminação única.
             </p>
             <Button
-              onClick={handleGenerateBracket}
+              onClick={() => setShowBracketConfirm(true)}
               size="lg"
               disabled={isGenerating}
             >
@@ -291,7 +307,7 @@ export function TournamentManagementTab({ tournamentId }: ManagementTabProps) {
               ) : (
                 <Settings2 className="mr-2 h-4 w-4" />
               )}
-              Generate Bracket
+              Gerar Chave
             </Button>
           </Card>
         </div>
@@ -302,14 +318,14 @@ export function TournamentManagementTab({ tournamentId }: ManagementTabProps) {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-white font-bold text-lg">Match Control</h3>
+              <h3 className="text-white font-bold text-lg">Controle de Partidas</h3>
               <p className="text-sm text-zinc-500">
-                Select a phase to manage matches.
+                Selecione uma fase para gerenciar partidas.
               </p>
             </div>
             {matches.length === 0 && (
               <div className="flex items-center gap-2 text-yellow-500 text-sm bg-yellow-500/10 px-3 py-1 rounded border border-yellow-500/20">
-                <AlertTriangle className="h-4 w-4" /> No matches found
+                <AlertTriangle className="h-4 w-4" /> Nenhuma partida encontrada
               </div>
             )}
           </div>
@@ -320,7 +336,7 @@ export function TournamentManagementTab({ tournamentId }: ManagementTabProps) {
                 value="groups"
                 className="px-6 h-full data-[state=active]:bg-zinc-800"
               >
-                Group Stage ({groupMatches.length})
+                Fase de Grupos ({groupMatches.length})
               </TabsTrigger>
               <TabsTrigger
                 value="playoffs"
@@ -370,6 +386,31 @@ export function TournamentManagementTab({ tournamentId }: ManagementTabProps) {
         matchToEdit={selectedMatch}
         availableTeams={allTeams}
         onSuccess={loadData}
+      />
+
+      {/* Confirm Dialogs */}
+      <ConfirmDialog
+        open={showScheduleConfirm}
+        onOpenChange={setShowScheduleConfirm}
+        title="Gerar Calendário de Grupos"
+        description="Isso apagará as partidas de grupo existentes e gerará um novo calendário Round Robin. Tem certeza que deseja continuar?"
+        confirmText={isGenerating ? "Gerando..." : "Gerar Calendário"}
+        cancelText="Cancelar"
+        variant="warning"
+        onConfirm={handleGenerateGroupSchedule}
+        loading={isGenerating}
+      />
+
+      <ConfirmDialog
+        open={showBracketConfirm}
+        onOpenChange={setShowBracketConfirm}
+        title="Gerar Chave de Playoffs"
+        description="Isso sobrescreverá a chave de playoffs existente. Tem certeza que deseja continuar?"
+        confirmText={isGenerating ? "Gerando..." : "Gerar Chave"}
+        cancelText="Cancelar"
+        variant="warning"
+        onConfirm={handleGenerateBracket}
+        loading={isGenerating}
       />
     </div>
   );

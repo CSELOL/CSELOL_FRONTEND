@@ -1,6 +1,4 @@
 import { getAccessToken } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
-import { v4 as uuidv4 } from "uuid";
 
 const API_URL = "http://localhost:3333/api";
 
@@ -38,31 +36,13 @@ async function uploadToBackend(file: File, folderType: 'team' | 'tournament'): P
 }
 
 /**
- * Uploads a Team Logo to Supabase public bucket
+ * Uploads a Team Logo via the backend API.
  */
 export async function uploadLogo(file: File): Promise<string> {
   if (!file.type.startsWith("image/")) {
     throw new Error("Only image files are allowed.");
   }
-
-  const fileExt = file.name.split(".").pop();
-  const fileName = `${uuidv4()}.${fileExt}`;
-  const filePath = `team-logos/${fileName}`;
-
-  const { error } = await supabase.storage
-    .from("public-assets")
-    .upload(filePath, file);
-
-  if (error) {
-    console.error("Supabase Upload Error:", error);
-    throw new Error("Failed to upload image.");
-  }
-
-  const { data } = supabase.storage
-    .from("public-assets")
-    .getPublicUrl(filePath);
-
-  return data.publicUrl;
+  return uploadToBackend(file, 'team');
 }
 
 /**
@@ -76,58 +56,57 @@ export async function uploadTournamentAsset(file: File, _type: 'banner' | 'logo'
 }
 
 /**
- * Deletes a file via the Local Backend API or Supabase.
+ * Deletes a file via the Backend API.
+ * Backend handles Supabase storage deletion using service role key.
  */
-export async function deleteAsset(fullUrl: string) {
-  if (!fullUrl) return;
+export async function deleteAsset(fileUrl: string) {
+  if (!fileUrl) return;
 
-  // Check if it's a local URL
-  if (fullUrl.includes(API_URL.replace('/api', ''))) {
-    try {
-      const headers = await getAuthHeaders();
-      const res = await fetch(`${API_URL}/files/delete`, {
-        method: 'DELETE',
-        headers: {
-          "Content-Type": "application/json",
-          ...headers
-        },
-        body: JSON.stringify({ fileUrl: fullUrl })
-      });
+  try {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_URL}/files/delete`, {
+      method: 'DELETE',
+      headers: {
+        "Content-Type": "application/json",
+        ...headers
+      },
+      body: JSON.stringify({ fileUrl })
+    });
 
-      if (!res.ok) console.error("Failed to delete file on backend");
-    } catch (error) {
-      console.error("Network error deleting file", error);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: "Delete failed" }));
+      console.error("Failed to delete file:", err);
     }
-  }
-  // Handle Supabase Deletion
-  else if (fullUrl.includes("supabase")) {
-    const path = fullUrl.split("/public-assets/")[1];
-    if (path) {
-      await supabase.storage.from("public-assets").remove([path]);
-    }
+  } catch (error) {
+    console.error("Network error deleting file", error);
   }
 }
 
 /**
- * Uploads a PRIVATE payment proof to Supabase.
+ * Uploads a PRIVATE payment proof via the backend API.
+ * Returns the file path (not a public URL since it's private).
  */
 export async function uploadPaymentProof(file: File): Promise<string> {
   if (!file.type.startsWith("image/") && file.type !== "application/pdf") {
     throw new Error("Only images or PDFs are allowed.");
   }
 
-  const fileExt = file.name.split(".").pop();
-  const fileName = `${uuidv4()}.${fileExt}`;
-  const filePath = `proofs/${fileName}`;
+  const formData = new FormData();
+  formData.append('file', file);
 
-  const { data, error } = await supabase.storage
-    .from("private-assets")
-    .upload(filePath, file);
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_URL}/files/payment-proof`, {
+    method: 'POST',
+    headers,
+    body: formData
+  });
 
-  if (error) {
-    console.error("Proof Upload Error:", error);
-    throw new Error("Failed to upload payment proof.");
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: "Upload failed" }));
+    console.error("Payment Proof Upload Error:", err);
+    throw new Error(err.error || "Failed to upload payment proof.");
   }
 
-  return data.path;
+  const data = await res.json();
+  return data.path; // Returns path like "payment-proofs/uuid.pdf"
 }

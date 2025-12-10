@@ -34,7 +34,7 @@ export function JoinTeamDialog({ open, onOpenChange }: JoinTeamDialogProps) {
       // Force reload to update dashboard state from "No Team" to "Has Team"
       window.location.reload();
     } catch (err: any) {
-      setError("Invalid code or unable to join.");
+      setError("Código inválido ou não foi possível entrar.");
     } finally {
       setIsLoading(false);
     }
@@ -46,17 +46,17 @@ export function JoinTeamDialog({ open, onOpenChange }: JoinTeamDialogProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-blue-400" />
-            Join Existing Team
+            Entrar em Time Existente
           </DialogTitle>
           <DialogDescription className="text-zinc-400">
-            Enter the invite code provided by your Team Captain.
+            Insira o código de convite fornecido pelo seu Capitão.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={onSubmit} className="grid gap-6 py-4">
           <div className="grid gap-2">
             <Label htmlFor="code" className="text-zinc-300">
-              Invite Code
+              Código de Convite
             </Label>
             <div className="relative">
               <Input
@@ -78,7 +78,7 @@ export function JoinTeamDialog({ open, onOpenChange }: JoinTeamDialogProps) {
               type="button"
               onClick={() => onOpenChange(false)}
             >
-              Cancel
+              Cancelar
             </Button>
             <Button
               type="submit"
@@ -88,7 +88,7 @@ export function JoinTeamDialog({ open, onOpenChange }: JoinTeamDialogProps) {
               {isLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                "Join Squad"
+                "Entrar no Esquadrão"
               )}
             </Button>
           </DialogFooter>

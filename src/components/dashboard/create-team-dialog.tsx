@@ -11,6 +11,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -66,7 +67,7 @@ export function CreateTeamDialog({
       const publicUrl = await uploadLogo(file);
       setLogoUrl(publicUrl);
     } catch (error) {
-      alert("Failed to upload image.");
+      toast.error("Falha ao enviar imagem.");
       console.error(error);
     } finally {
       setIsUploading(false);
@@ -123,7 +124,7 @@ export function CreateTeamDialog({
       window.location.reload();
     } catch (error) {
       console.error(error);
-      alert("Failed to create team. Name or Tag might be taken.");
+      toast.error("Falha ao criar time. Nome ou Tag podem já estar em uso.");
     } finally {
       setIsLoading(false);
     }
@@ -135,18 +136,18 @@ export function CreateTeamDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Shield className="h-5 w-5 text-primary" />
-            Register New Team
+            Registrar Novo Time
           </DialogTitle>
           <DialogDescription className="text-zinc-400">
-            Establish your organization.
+            Estabeleça sua organização.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={onSubmit} className="py-4">
           <Tabs defaultValue="identity" className="w-full">
             <TabsList className="grid w-full grid-cols-2 bg-zinc-900 border border-white/5 mb-4">
-              <TabsTrigger value="identity">Identity</TabsTrigger>
-              <TabsTrigger value="socials">Socials & Bio</TabsTrigger>
+              <TabsTrigger value="identity">Identidade</TabsTrigger>
+              <TabsTrigger value="socials">Redes Sociais & Bio</TabsTrigger>
             </TabsList>
 
             <TabsContent value="identity" className="space-y-6">
@@ -170,7 +171,7 @@ export function CreateTeamDialog({
                         <>
                           <Upload className="h-6 w-6 text-zinc-400" />
                           <span className="mt-1 text-[10px] text-zinc-500">
-                            Upload
+                            Enviar
                           </span>
                         </>
                       )}
@@ -191,14 +192,14 @@ export function CreateTeamDialog({
                     className="text-xs text-red-400 hover:underline"
                     onClick={handleRemoveImage}
                   >
-                    Remove Logo
+                    Remover Logo
                   </button>
                 )}
               </div>
 
               <div className="grid gap-4">
                 <div className="grid gap-2">
-                  <Label>Team Name</Label>
+                  <Label>Nome do Time</Label>
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -224,7 +225,7 @@ export function CreateTeamDialog({
 
             <TabsContent value="socials" className="space-y-4">
               <div className="grid gap-2">
-                <Label>Description</Label>
+                <Label>Descrição</Label>
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -232,7 +233,7 @@ export function CreateTeamDialog({
                 />
               </div>
               <div className="grid gap-3 mt-4">
-                <Label className="text-zinc-300">Social Media Links</Label>
+                <Label className="text-zinc-300">Links de Redes Sociais</Label>
                 <div className="relative">
                   <Twitter className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
                   <Input
@@ -288,7 +289,7 @@ export function CreateTeamDialog({
               type="button"
               onClick={() => onOpenChange(false)}
             >
-              Cancel
+              Cancelar
             </Button>
             <Button
               type="submit"
@@ -298,7 +299,7 @@ export function CreateTeamDialog({
               {isLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                "Register Team"
+                "Registrar Time"
               )}
             </Button>
           </DialogFooter>

@@ -1,3 +1,4 @@
+import React from "react";
 import { Outlet } from "react-router-dom";
 import { useAuth } from "@/providers/auth-provider";
 import { Loader2, ShieldAlert } from "lucide-react";
@@ -10,6 +11,13 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ role }: ProtectedRouteProps) {
   const { isAuthenticated, isInitialized, hasRole, login } = useAuth();
 
+  // Trigger login modal via useEffect to avoid calling state setters during render
+  React.useEffect(() => {
+    if (isInitialized && !isAuthenticated) {
+      login();
+    }
+  }, [isInitialized, isAuthenticated, login]);
+
   if (!isInitialized) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-zinc-950">
@@ -18,9 +26,8 @@ export function ProtectedRoute({ role }: ProtectedRouteProps) {
     );
   }
 
-  // 1. Not Logged In? Show login modal
+  // 1. Not Logged In? Show loading while login modal appears
   if (!isAuthenticated) {
-    login();
     return (
       <div className="flex h-screen w-full items-center justify-center bg-zinc-950">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -33,14 +40,14 @@ export function ProtectedRoute({ role }: ProtectedRouteProps) {
     return (
       <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-zinc-950 text-white">
         <ShieldAlert className="h-16 w-16 text-red-500" />
-        <h1 className="text-3xl font-bold">Access Denied</h1>
+        <h1 className="text-3xl font-bold">Acesso Negado</h1>
         <p className="text-zinc-400">
-          You need the{" "}
-          <span className="font-mono font-bold text-red-400">{role}</span> role
-          to view this page.
+          Você precisa da permissão{" "}
+          <span className="font-mono font-bold text-red-400">{role}</span> para
+          acessar esta página.
         </p>
         <Button variant="outline" onClick={() => window.history.back()}>
-          Go Back
+          Voltar
         </Button>
       </div>
     );

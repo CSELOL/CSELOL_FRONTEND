@@ -7,9 +7,9 @@ import {
   Upload,
   Globe,
   Users,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -71,7 +71,7 @@ export function CreateTournamentDialog({
       const url = await uploadTournamentAsset(file, type);
       handleChange(type === "banner" ? "banner_url" : "logo_url", url);
     } catch (error) {
-      alert(`Failed to upload ${type}`);
+      toast.error(`Falha ao enviar ${type === "banner" ? "banner" : "logo"}`);
     } finally {
       setIsUploading(false);
     }
@@ -96,11 +96,13 @@ export function CreateTournamentDialog({
       };
 
       await createTournamentAPI(payload);
+      toast.success("Torneio criado com sucesso!");
       setIsLoading(false);
       onOpenChange(false);
       onSuccess();
     } catch (err) {
       console.error("Error creating tournament:", err);
+      toast.error("Falha ao criar torneio.");
       setIsLoading(false);
     }
   };
@@ -110,27 +112,27 @@ export function CreateTournamentDialog({
       <DialogContent className="sm:max-w-[700px] bg-zinc-950 border-white/10 text-white max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
-            <Trophy className="h-5 w-5 text-red-500" /> Create Tournament
+            <Trophy className="h-5 w-5 text-red-500" /> Criar Torneio
           </DialogTitle>
           <DialogDescription className="text-zinc-400">
-            Set up the visuals and basic info.
+            Configure o visual e as informações básicas.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={onSubmit} className="py-4 space-y-6">
           <Tabs defaultValue="general">
             <TabsList className="grid w-full grid-cols-2 bg-zinc-900 border border-white/5 mb-6">
-              <TabsTrigger value="general">General Info</TabsTrigger>
-              <TabsTrigger value="branding">Visuals & Branding</TabsTrigger>
+              <TabsTrigger value="general">Informações Gerais</TabsTrigger>
+              <TabsTrigger value="branding">Visual & Branding</TabsTrigger>
             </TabsList>
 
             {/* TAB 1: GENERAL INFO */}
             <TabsContent value="general" className="space-y-4">
               <div className="grid gap-2">
-                <Label className="text-zinc-300">Tournament Name</Label>
+                <Label className="text-zinc-300">Nome do Torneio</Label>
                 <Input
                   required
-                  placeholder="e.g. CSELOL Season 5"
+                  placeholder="ex: CSELOL Season 5"
                   className="bg-zinc-900/50 border-white/10"
                   value={formData.tournament_name}
                   onChange={(e) =>
@@ -140,9 +142,9 @@ export function CreateTournamentDialog({
               </div>
 
               <div className="grid gap-2">
-                <Label className="text-zinc-300">Description</Label>
+                <Label className="text-zinc-300">Descrição</Label>
                 <Textarea
-                  placeholder="Brief summary..."
+                  placeholder="Breve resumo..."
                   className="bg-zinc-900/50 border-white/10 resize-none h-24"
                   value={formData.tournament_description}
                   onChange={(e) =>
@@ -152,7 +154,7 @@ export function CreateTournamentDialog({
               </div>
 
               <div className="grid gap-2">
-                <Label className="text-zinc-300">Start Date</Label>
+                <Label className="text-zinc-300">Data de Início</Label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
                   <Input
@@ -170,7 +172,7 @@ export function CreateTournamentDialog({
                   <div className="flex items-center gap-2">
                     <Globe className="h-4 w-4 text-zinc-400" />
                     <span className="text-sm text-zinc-300">
-                      Publicly Listed?
+                      Listado Publicamente?
                     </span>
                   </div>
                   <Switch
@@ -182,7 +184,7 @@ export function CreateTournamentDialog({
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-zinc-400" />
                     <span className="text-sm text-zinc-300">
-                      Allow Signups?
+                      Permitir Inscrições?
                     </span>
                   </div>
                   <Switch
@@ -197,7 +199,7 @@ export function CreateTournamentDialog({
             <TabsContent value="branding" className="space-y-6">
               {/* BANNER UPLOAD */}
               <div className="space-y-2">
-                <Label>Tournament Banner (1920x400)</Label>
+                <Label>Banner do Torneio (1920x400)</Label>
                 <div
                   className="relative w-full h-40 rounded-lg border-2 border-dashed border-white/10 bg-black/20 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors overflow-hidden group"
                   onClick={() => bannerInputRef.current?.click()}
@@ -222,7 +224,7 @@ export function CreateTournamentDialog({
                         <Upload className="h-8 w-8 mb-2" />
                       )}
                       <span className="text-xs uppercase font-bold">
-                        Click to Upload Banner
+                        Clique para Enviar Banner
                       </span>
                     </div>
                   )}
@@ -239,7 +241,7 @@ export function CreateTournamentDialog({
 
               {/* LOGO UPLOAD */}
               <div className="space-y-2">
-                <Label>Tournament Logo (Square)</Label>
+                <Label>Logo do Torneio (Quadrado)</Label>
                 <div className="flex items-center gap-4">
                   <div
                     className="relative h-32 w-32 rounded-xl border-2 border-dashed border-white/10 bg-black/20 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors overflow-hidden group"
@@ -272,8 +274,8 @@ export function CreateTournamentDialog({
                     />
                   </div>
                   <div className="text-sm text-zinc-500 max-w-[250px]">
-                    <p>Recommended: 500x500px.</p>
-                    <p>This logo will appear on the cards and match lobbies.</p>
+                    <p>Recomendado: 500x500px.</p>
+                    <p>Este logo aparecerá nos cartões e lobbies de partida.</p>
                   </div>
                 </div>
               </div>
@@ -286,7 +288,7 @@ export function CreateTournamentDialog({
               variant="ghost"
               onClick={() => onOpenChange(false)}
             >
-              Cancel
+              Cancelar
             </Button>
             <Button
               type="submit"
@@ -294,7 +296,7 @@ export function CreateTournamentDialog({
               className="bg-red-600 hover:bg-red-700 text-white font-bold"
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{" "}
-              Create Tournament
+              Criar Torneio
             </Button>
           </DialogFooter>
         </form>

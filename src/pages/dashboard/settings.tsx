@@ -40,9 +40,9 @@ export function SettingsPage() {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-white">Account Settings</h1>
+        <h1 className="text-3xl font-bold text-white">Configurações da Conta</h1>
         <p className="text-zinc-400">
-          Manage your profile, game accounts, and preferences.
+          Gerencie seu perfil, contas de jogo e preferências.
         </p>
       </div>
 
@@ -52,19 +52,19 @@ export function SettingsPage() {
             value="general"
             className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary h-10 px-6"
           >
-            <User className="mr-2 h-4 w-4" /> General
+            <User className="mr-2 h-4 w-4" /> Geral
           </TabsTrigger>
           <TabsTrigger
             value="game-accounts"
             className="data-[state=active]:bg-blue-500/10 data-[state=active]:text-blue-400 h-10 px-6"
           >
-            <Gamepad2 className="mr-2 h-4 w-4" /> Game Accounts
+            <Gamepad2 className="mr-2 h-4 w-4" /> Contas de Jogo
           </TabsTrigger>
           <TabsTrigger
             value="notifications"
             className="data-[state=active]:bg-yellow-500/10 data-[state=active]:text-yellow-400 h-10 px-6"
           >
-            <Bell className="mr-2 h-4 w-4" /> Notifications
+            <Bell className="mr-2 h-4 w-4" /> Notificações
           </TabsTrigger>
         </TabsList>
 
@@ -72,37 +72,36 @@ export function SettingsPage() {
         <TabsContent value="general" className="mt-6 space-y-6">
           <Card className="bg-zinc-900/50 border-white/10">
             <CardHeader>
-              <CardTitle className="text-white">Profile Information</CardTitle>
+              <CardTitle className="text-white">Informações do Perfil</CardTitle>
               <CardDescription>
-                This information will be displayed publicly on your team
-                profile.
+                Esta informação será exibida publicamente no perfil do seu time.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-zinc-300">Display Name</Label>
+                  <Label className="text-zinc-300">Nome de Exibição</Label>
                   <Input
-                    defaultValue={user?.user_metadata?.nickname || user?.email?.split("@")[0] || "Summoner"}
+                    defaultValue={user?.user_metadata?.nickname || user?.email?.split("@")[0] || "Invocador"}
                     className="bg-black/20 border-white/10 text-white"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-zinc-300">Email Address</Label>
+                  <Label className="text-zinc-300">Endereço de Email</Label>
                   <Input
-                    defaultValue={user?.email || "user@example.com"}
+                    defaultValue={user?.email || "usuario@exemplo.com"}
                     disabled
                     className="bg-black/20 border-white/10 text-zinc-500 cursor-not-allowed"
                   />
                   <p className="text-[10px] text-zinc-500">
-                    Email managed via Supabase Auth.
+                    Email gerenciado via Supabase Auth.
                   </p>
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-zinc-300">Bio / Description</Label>
+                <Label className="text-zinc-300">Bio / Descrição</Label>
                 <Input
-                  placeholder="Tell us about your playstyle..."
+                  placeholder="Conte-nos sobre seu estilo de jogo..."
                   className="bg-black/20 border-white/10 text-white"
                 />
               </div>
@@ -114,23 +113,23 @@ export function SettingsPage() {
                 className="bg-primary text-primary-foreground font-bold"
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Changes
+                Salvar Alterações
               </Button>
             </CardFooter>
           </Card>
 
           <Card className="bg-red-500/5 border-red-500/20">
             <CardHeader>
-              <CardTitle className="text-red-500">Danger Zone</CardTitle>
+              <CardTitle className="text-red-500">Zona de Perigo</CardTitle>
               <CardDescription className="text-red-400/60">
-                Irreversible actions regarding your account.
+                Ações irreversíveis relacionadas à sua conta.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex items-center justify-between">
               <div>
-                <p className="font-bold text-white">Sign Out</p>
+                <p className="font-bold text-white">Sair</p>
                 <p className="text-xs text-zinc-500">
-                  Log out of your session on this device.
+                  Faça logout da sua sessão neste dispositivo.
                 </p>
               </div>
               <Button
@@ -138,7 +137,7 @@ export function SettingsPage() {
                 onClick={() => logout()}
                 className="bg-red-600 hover:bg-red-700"
               >
-                <LogOut className="mr-2 h-4 w-4" /> Logout
+                <LogOut className="mr-2 h-4 w-4" /> Sair
               </Button>
             </CardContent>
           </Card>
@@ -149,12 +148,10 @@ export function SettingsPage() {
           <Card className="bg-zinc-900/50 border-white/10">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
-                <Gamepad2 className="h-5 w-5 text-blue-400" /> Riot Games
-                Integration
+                <Gamepad2 className="h-5 w-5 text-blue-400" /> Integração Riot Games
               </CardTitle>
               <CardDescription>
-                Link your League of Legends account to participate in
-                tournaments.
+                Vincule sua conta League of Legends para participar de torneios.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -164,9 +161,9 @@ export function SettingsPage() {
                   <CheckCircle2 className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="font-bold text-emerald-400">Account Linked</p>
+                  <p className="font-bold text-emerald-400">Conta Vinculada</p>
                   <p className="text-xs text-emerald-300/70">
-                    Your matches will be tracked automatically.
+                    Suas partidas serão rastreadas automaticamente.
                   </p>
                 </div>
               </div>
@@ -174,7 +171,7 @@ export function SettingsPage() {
               <div className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-zinc-300">Riot ID (Game Name)</Label>
+                    <Label className="text-zinc-300">Riot ID (Nome de Jogo)</Label>
                     <Input
                       value={riotId.split("#")[0]}
                       onChange={(e) =>
@@ -201,7 +198,7 @@ export function SettingsPage() {
                 </div>
                 <p className="text-xs text-zinc-500 flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
-                  Changing this will require re-verification by an Admin.
+                  Mudar isso exigirá nova verificação por um Admin.
                 </p>
               </div>
             </CardContent>
@@ -212,7 +209,7 @@ export function SettingsPage() {
                 className="bg-primary text-primary-foreground font-bold"
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Changes
+                Salvar Alterações
               </Button>
             </CardFooter>
           </Card>
@@ -223,20 +220,20 @@ export function SettingsPage() {
           <Card className="bg-zinc-900/50 border-white/10">
             <CardHeader>
               <CardTitle className="text-white">
-                Notification Preferences
+                Preferências de Notificação
               </CardTitle>
               <CardDescription>
-                Choose what you want to be notified about.
+                Escolha sobre o que você quer ser notificado.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label className="text-base text-zinc-200">
-                    Match Reminders
+                    Lembretes de Partidas
                   </Label>
                   <p className="text-xs text-zinc-500">
-                    Receive alerts 15 minutes before your match starts.
+                    Receba alertas 15 minutos antes da sua partida começar.
                   </p>
                 </div>
                 {/* Switch component would go here */}
@@ -245,10 +242,10 @@ export function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label className="text-base text-zinc-200">
-                    Team Invites
+                    Convites de Time
                   </Label>
                   <p className="text-xs text-zinc-500">
-                    Get notified when someone invites you to a team.
+                    Seja notificado quando alguém te convidar para um time.
                   </p>
                 </div>
                 <div className="h-6 w-10 bg-primary rounded-full" />

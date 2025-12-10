@@ -14,6 +14,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -87,7 +88,7 @@ export function AdminTournamentsPage() {
       console.error("Failed to load tournaments:", err);
       // Set a user-friendly error message
       setError(
-        "Unable to connect to the server. Please check if the backend is running."
+        "Não foi possível conectar ao servidor. Por favor verifique se o backend está rodando."
       );
     } finally {
       setIsLoading(false);
@@ -128,7 +129,7 @@ export function AdminTournamentsPage() {
       setAlertOpen(false);
     } catch (error) {
       console.error("Action failed", error);
-      alert("Failed to perform action");
+      toast.error("Falha ao realizar ação");
     } finally {
       setIsActionLoading(false);
       setSelectedTournament(null);
@@ -145,15 +146,15 @@ export function AdminTournamentsPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 pb-6">
         <div>
           <h1 className="text-3xl font-bold text-white">
-            Tournament Management
+            Gerenciamento de Torneios
           </h1>
-          <p className="text-zinc-400">Organize seasons and community cups.</p>
+          <p className="text-zinc-400">Organize temporadas e copas da comunidade.</p>
         </div>
         <Button
           onClick={() => setIsCreateOpen(true)}
           className="bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg"
         >
-          <Plus className="mr-2 h-4 w-4" /> Create Tournament
+          <Plus className="mr-2 h-4 w-4" /> Criar Torneio
         </Button>
       </div>
 
@@ -164,7 +165,7 @@ export function AdminTournamentsPage() {
             <WifiOff className="h-6 w-6" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white">Connection Error</h3>
+            <h3 className="text-lg font-bold text-white">Erro de Conexão</h3>
             <p className="text-zinc-400 max-w-md">{error}</p>
           </div>
           <Button
@@ -172,7 +173,7 @@ export function AdminTournamentsPage() {
             variant="outline"
             className="border-red-500/20 hover:bg-red-500/10 text-red-400"
           >
-            <RefreshCw className="mr-2 h-4 w-4" /> Try Again
+            <RefreshCw className="mr-2 h-4 w-4" /> Tentar Novamente
           </Button>
         </div>
       ) : (
@@ -181,17 +182,17 @@ export function AdminTournamentsPage() {
           <div className="flex items-center justify-between mb-6">
             <TabsList className="bg-zinc-900/50 border border-white/10 h-10">
               <TabsTrigger value="active" className="gap-2">
-                <Trophy className="h-4 w-4" /> Active Events
+                <Trophy className="h-4 w-4" /> Eventos Ativos
               </TabsTrigger>
               <TabsTrigger value="archive" className="gap-2">
-                <Archive className="h-4 w-4" /> Archive
+                <Archive className="h-4 w-4" /> Arquivo
               </TabsTrigger>
             </TabsList>
 
             <div className="hidden md:flex items-center gap-2 bg-zinc-900/50 p-1.5 rounded-lg border border-white/5 w-64">
               <Search className="h-4 w-4 text-zinc-500 ml-2" />
               <Input
-                placeholder="Search..."
+                placeholder="Pesquisar..."
                 className="border-0 bg-transparent focus-visible:ring-0 text-white h-7 text-sm"
               />
             </div>
@@ -201,7 +202,7 @@ export function AdminTournamentsPage() {
           <TabsContent value="active" className="space-y-6">
             {isLoading ? (
               <div className="text-white text-center py-10">
-                <Loader2 className="h-8 w-8 animate-spin mx-auto" /> Loading...
+                <Loader2 className="h-8 w-8 animate-spin mx-auto" /> Carregando...
               </div>
             ) : (
               <>
@@ -215,7 +216,7 @@ export function AdminTournamentsPage() {
                 ))}
                 {activeTournaments.length === 0 && (
                   <div className="text-center text-zinc-500 py-10 border border-dashed border-white/10 rounded-lg">
-                    No active tournaments found.
+                    Nenhum torneio ativo encontrado.
                   </div>
                 )}
               </>
@@ -234,7 +235,7 @@ export function AdminTournamentsPage() {
             ))}
             {archivedTournaments.length === 0 && (
               <div className="text-center text-zinc-500 py-10 border border-dashed border-white/10 rounded-lg">
-                No archived tournaments found.
+                Nenhum torneio arquivado encontrado.
               </div>
             )}
           </TabsContent>
@@ -257,13 +258,13 @@ export function AdminTournamentsPage() {
               {actionType === "archive" && (
                 <Archive className="h-5 w-5 text-yellow-500" />
               )}
-              Confirm Action
+              Confirmar Ação
             </AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-400">
               {actionType === "delete"
-                ? `Are you sure you want to permanently delete "${selectedTournament?.tournament_name}"? This action cannot be undone.`
-                : `Are you sure you want to ${
-                    selectedTournament?.is_archived ? "restore" : "archive"
+                ? `Tem certeza que deseja excluir permanentemente "${selectedTournament?.tournament_name}"? Esta ação não pode ser desfeita.`
+                : `Tem certeza que deseja ${
+                    selectedTournament?.is_archived ? "restaurar" : "arquivar"
                   } "${selectedTournament?.tournament_name}"?`}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -328,13 +329,13 @@ function TournamentCard({
               <Badge className="bg-red-500/10 text-red-500 border-red-500/20">
                 {t.status}
               </Badge>
-              {t.is_archived && <Badge variant="secondary">ARCHIVED</Badge>}
+              {t.is_archived && <Badge variant="secondary">ARQUIVADO</Badge>}
             </div>
             <h2 className="text-3xl font-black text-white uppercase italic tracking-tight leading-none">
               {t.tournament_name}
             </h2>
             <p className="text-zinc-400 max-w-lg line-clamp-2">
-              {t.tournament_description || "No description provided."}
+              {t.tournament_description || "Nenhuma descrição fornecida."}
             </p>
           </div>
 
@@ -344,7 +345,7 @@ function TournamentCard({
               asChild
             >
               <Link to={`/dashboard/admin/tournaments/${t.id}`}>
-                Manage <ArrowRight className="ml-2 h-5 w-5" />
+                Gerenciar <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
             <div className="flex gap-2 w-full">
@@ -364,14 +365,14 @@ function TournamentCard({
                 >
                   <DropdownMenuItem onClick={onArchive}>
                     <Archive className="mr-2 h-4 w-4" />{" "}
-                    {t.is_archived ? "Unarchive" : "Archive"}
+                    {t.is_archived ? "Desarquivar" : "Arquivar"}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-white/10" />
                   <DropdownMenuItem
                     onClick={onDelete}
                     className="text-red-400 hover:text-red-300 focus:bg-red-500/10 focus:text-red-300"
                   >
-                    <Trash2 className="mr-2 h-4 w-4" /> Delete Permanently
+                    <Trash2 className="mr-2 h-4 w-4" /> Excluir Permanentemente
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

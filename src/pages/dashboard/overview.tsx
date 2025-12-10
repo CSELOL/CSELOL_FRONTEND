@@ -50,7 +50,7 @@ export function DashboardPage() {
   }, []);
 
   if (isLoading) {
-    return <div className="text-white">Loading dashboard...</div>;
+    return <div className="text-white">Carregando painel...</div>;
   }
 
   return (
@@ -59,10 +59,10 @@ export function DashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-white">
-            Welcome, {user?.firstName || "Summoner"}
+            Bem-vindo, {user?.user_metadata?.nickname || user?.email?.split("@")[0] || "Invocador"}
           </h1>
           <p className="text-zinc-400">
-            Manage your team and upcoming matches.
+            Gerencie seu time e próximas partidas.
           </p>
         </div>
       </div>
@@ -79,17 +79,17 @@ export function DashboardPage() {
                 <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <Trophy className="h-7 w-7" />
                 </div>
-                <h3 className="text-2xl font-bold text-white">Create a Team</h3>
+                <h3 className="text-2xl font-bold text-white">Criar um Time</h3>
                 <p className="mt-2 text-zinc-400">
-                  Become a Captain. Register a new organization, invite players,
-                  and manage your roster.
+                  Torne-se um Capitão. Registre uma nova organização, convide jogadores,
+                  e gerencie seu elenco.
                 </p>
               </div>
               <Button
                 onClick={() => setShowCreateModal(true)}
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 text-base font-bold group-hover:scale-[1.02] transition-transform"
               >
-                Create New Team <ArrowRight className="ml-2 h-4 w-4" />
+                Criar Novo Time <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -103,10 +103,10 @@ export function DashboardPage() {
                 <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
                   <UserPlus className="h-7 w-7" />
                 </div>
-                <h3 className="text-2xl font-bold text-white">Join a Team</h3>
+                <h3 className="text-2xl font-bold text-white">Entrar num Time</h3>
                 <p className="mt-2 text-zinc-400">
-                  Got an invite code? Enter it here to join an existing squad
-                  and start competing.
+                  Tem um código de convite? Digite aqui para se juntar a um esquadrão
+                  e começar a competir.
                 </p>
               </div>
               <Button
@@ -114,7 +114,7 @@ export function DashboardPage() {
                 variant="outline"
                 className="w-full border-white/10 bg-white/5 hover:bg-white/10 hover:text-white h-12 text-base font-bold group-hover:scale-[1.02] transition-transform"
               >
-                Enter Invite Code
+                Inserir Código de Convite
               </Button>
             </div>
           </div>
@@ -147,7 +147,7 @@ export function DashboardPage() {
                 <div className="ml-auto">
                   <Link to="/dashboard/team">
                     <Button variant="outline" className="border-white/10">
-                      Manage Team
+                      Gerenciar Time
                     </Button>
                   </Link>
                 </div>
@@ -157,12 +157,12 @@ export function DashboardPage() {
             {/* Upcoming Matches */}
             <div>
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <Swords className="h-5 w-5 text-primary" /> Upcoming Matches
+                <Swords className="h-5 w-5 text-primary" /> Próximas Partidas
               </h3>
               <div className="space-y-3">
                 {matches.length === 0 ? (
                   <div className="rounded-xl border border-white/10 bg-zinc-900/30 p-8 text-center text-zinc-500">
-                    No upcoming matches scheduled.
+                    Nenhuma partida agendada.
                   </div>
                 ) : (
                   matches.map((match) => (
@@ -213,12 +213,12 @@ export function DashboardPage() {
             {/* Active Tournaments */}
             <div>
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-yellow-500" /> Active Tournaments
+                <Trophy className="h-5 w-5 text-yellow-500" /> Torneios Ativos
               </h3>
               <div className="space-y-3">
                 {tournaments.length === 0 ? (
                   <div className="rounded-xl border border-white/10 bg-zinc-900/30 p-8 text-center text-zinc-500">
-                    Not registered for any tournaments.
+                    Não registrado em nenhum torneio.
                   </div>
                 ) : (
                   tournaments.map((tournament) => (

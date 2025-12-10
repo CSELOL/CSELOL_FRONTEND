@@ -36,43 +36,67 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<"login" | "register">("login");
 
-  // Fetch user roles from database
+  // Fetch user role from users table (users.role column stores system-wide permissions)
   const fetchUserRoles = useCallback(async (userId: string) => {
+    console.log("[Auth] Fetching role for supabase_id:", userId);
     try {
       const { data, error } = await supabase
-        .from("user_roles")
+        .from("users")
         .select("role")
-        .eq("user_id", userId);
+        .eq("supabase_id", userId)
+        .single();
 
       if (error) {
-        console.error("Failed to fetch user roles:", error);
+        console.error("[Auth] Failed to fetch user role:", error);
         return [];
       }
 
-      return data?.map((r) => r.role) || [];
+      // Return role as array for compatibility with hasRole() checks
+      const role = data?.role;
+      const roles = role ? [role] : [];
+      console.log("[Auth] Fetched roles:", roles);
+      return roles;
     } catch (err) {
-      console.error("Error fetching roles:", err);
+      console.error("[Auth] Error fetching role:", err);
       return [];
     }
   }, []);
 
   useEffect(() => {
-    // Get initial session
+    let mounted = true;
+
     const initAuth = async () => {
       try {
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        console.log("[Auth] Initializing...");
         
-        setSession(initialSession);
-        setUser(initialSession?.user || null);
+        // Create a promise that resolves the session
+        const sessionPromise = supabase.auth.getSession();
+        
+        // Create a timeout promise to prevent hanging indefinitely
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Auth timeout")), 4000)
+        );
 
-        if (initialSession?.user) {
-          const roles = await fetchUserRoles(initialSession.user.id);
-          setUserRoles(roles);
+        // Race them
+        const { data } = await Promise.race([sessionPromise, timeoutPromise]) as any;
+        
+        if (mounted) {
+          const initialSession = data?.session;
+          setSession(initialSession);
+          setUser(initialSession?.user || null);
+
+          if (initialSession?.user) {
+            // Don't let role fetching block the UI for too long
+            fetchUserRoles(initialSession.user.id).then(roles => {
+              if (mounted) setUserRoles(roles);
+            });
+          }
         }
       } catch (error) {
-        console.error("Auth Init Failed", error);
+        console.error("[Auth] Init warning:", error);
+        // Even if error, we stop loading so user isn't stuck
       } finally {
-        setIsInitialized(true);
+        if (mounted) setIsInitialized(true);
       }
     };
 
@@ -81,54 +105,70 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        console.log("Auth state changed:", event);
+        console.log(`[Auth] State change: ${event}`);
         
-        setSession(newSession);
-        setUser(newSession?.user || null);
+        if (mounted) {
+          setSession(newSession);
+          setUser(newSession?.user || null);
 
-        if (newSession?.user) {
-          const roles = await fetchUserRoles(newSession.user.id);
-          setUserRoles(roles);
-        } else {
-          setUserRoles([]);
-        }
+          if (newSession?.user) {
+            // Fetch roles silently
+            fetchUserRoles(newSession.user.id).then(roles => {
+               if (mounted) setUserRoles(roles);
+            });
+          } else {
+            setUserRoles([]);
+          }
 
-        // Close modal on successful auth
-        if (event === "SIGNED_IN") {
-          setShowAuthModal(false);
+          if (event === "SIGNED_IN") {
+            setShowAuthModal(false);
+            // NOTE: We do NOT redirect here globally anymore to prevent loops.
+            // Relied on the login component to redirect, or user navigation.
+          }
+          
+          if (event === "SIGNED_OUT") {
+            setUserRoles([]);
+            setSession(null);
+            setUser(null);
+          }
         }
       }
     );
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [fetchUserRoles]);
 
-  const login = () => {
+  const login = useCallback(() => {
     setAuthModalMode("login");
     setShowAuthModal(true);
-  };
+  }, []);
 
-  const register = () => {
+  const register = useCallback(() => {
     setAuthModalMode("register");
     setShowAuthModal(true);
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
+    console.log("[Auth] Logout initiated...");
     try {
       await supabase.auth.signOut();
+      console.log("[Auth] Signed out successfully");
       setSession(null);
       setUser(null);
       setUserRoles([]);
+      // Redirect to home page after logout
+      window.location.href = "/";
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error("[Auth] Logout failed:", error);
     }
-  };
+  }, []);
 
-  const hasRole = (role: string): boolean => {
+  const hasRole = useCallback((role: string): boolean => {
     return userRoles.includes(role);
-  };
+  }, [userRoles]);
 
   if (!isInitialized) {
     return (

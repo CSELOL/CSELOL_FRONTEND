@@ -54,9 +54,10 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
 
       if (error) throw error;
       
-      // onAuthStateChange in provider will handle the rest
+      // Explicitly redirect on successful manual login
+      window.location.href = "/dashboard";
     } catch (err: any) {
-      setError(err.message || "Failed to sign in");
+      setError(err.message || "Falha ao entrar");
     } finally {
       setIsLoading(false);
     }
@@ -80,9 +81,9 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
 
       if (error) throw error;
       
-      setSuccess("Account created! Please check your email to verify your account.");
+      setSuccess("Conta criada! Por favor verifique seu email.");
     } catch (err: any) {
-      setError(err.message || "Failed to create account");
+      setError(err.message || "Falha ao criar conta");
     } finally {
       setIsLoading(false);
     }
@@ -98,12 +99,12 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
             </div>
           </div>
           <DialogTitle className="text-2xl font-bold text-center text-white">
-            {mode === "login" ? "Welcome Back" : "Join CSELOL"}
+            {mode === "login" ? "Bem-vindo de Volta" : "Junte-se à CSELOL"}
           </DialogTitle>
           <DialogDescription className="text-center text-zinc-400">
             {mode === "login"
-              ? "Sign in to access your dashboard"
-              : "Create an account to start your journey"}
+              ? "Faça login para acessar seu painel"
+              : "Crie uma conta para iniciar sua jornada"}
           </DialogDescription>
         </DialogHeader>
 
@@ -131,7 +132,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
                 <Input
                   id="nickname"
                   type="text"
-                  placeholder="Your gaming nickname"
+                  placeholder="Seu nick de jogo"
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
                   className="pl-10 bg-zinc-900 border-white/10 text-white placeholder:text-zinc-500"
@@ -162,7 +163,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
           {/* Password field */}
           <div className="space-y-2">
             <Label htmlFor="password" className="text-zinc-300">
-              Password
+              Senha
             </Label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
@@ -188,12 +189,12 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {mode === "login" ? "Signing in..." : "Creating account..."}
+                {mode === "login" ? "Entrando..." : "Criando conta..."}
               </>
             ) : mode === "login" ? (
-              "Sign In"
+              "Entrar"
             ) : (
-              "Create Account"
+              "Criar Conta"
             )}
           </Button>
         </form>
@@ -202,7 +203,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
         <div className="mt-4 text-center text-sm text-zinc-400">
           {mode === "login" ? (
             <>
-              Don't have an account?{" "}
+              Não tem uma conta?{" "}
               <button
                 type="button"
                 onClick={() => {
@@ -212,12 +213,12 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
                 }}
                 className="text-primary hover:underline font-medium"
               >
-                Sign up
+                Cadastre-se
               </button>
             </>
           ) : (
             <>
-              Already have an account?{" "}
+              Já tem uma conta?{" "}
               <button
                 type="button"
                 onClick={() => {
@@ -227,7 +228,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
                 }}
                 className="text-primary hover:underline font-medium"
               >
-                Sign in
+                Entrar
               </button>
             </>
           )}

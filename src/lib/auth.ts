@@ -1,11 +1,25 @@
 import { supabase } from './supabase';
+import type { Session } from '@supabase/supabase-js';
+
+// Cache the session to avoid repeated getSession calls
+let cachedSession: Session | null = null;
+
+// Initialize and listen for session changes
+supabase.auth.getSession().then(({ data: { session } }) => {
+    cachedSession = session;
+});
+
+supabase.auth.onAuthStateChange((_event, session) => {
+    cachedSession = session;
+});
 
 /**
  * Helper to get authentication headers for API calls.
- * Uses Supabase session token.
+ * Uses cached Supabase session token for performance.
  */
 export async function getAuthHeaders(): Promise<Record<string, string>> {
-    const { data: { session } } = await supabase.auth.getSession();
+    // Use cached session if available, otherwise fetch
+    const session = cachedSession ?? (await supabase.auth.getSession()).data.session;
 
     return {
         'Content-Type': 'application/json',
@@ -17,6 +31,7 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
  * Get current access token (for non-JSON requests like file uploads)
  */
 export async function getAccessToken(): Promise<string | null> {
-    const { data: { session } } = await supabase.auth.getSession();
+    // Use cached session if available, otherwise fetch
+    const session = cachedSession ?? (await supabase.auth.getSession()).data.session;
     return session?.access_token || null;
 }
