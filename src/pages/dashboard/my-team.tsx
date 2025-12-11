@@ -7,8 +7,9 @@ import {
   Copy,
   Check,
   RefreshCw,
-  Settings,
   UserCheck,
+  LogOut,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -35,6 +36,8 @@ import {
   getTeamMembersAPI,
   refreshTeamInviteCodeAPI,
   transferTeamOwnershipAPI,
+  leaveTeamAPI,
+  deleteTeamAPI,
   type TeamMember,
 } from "@/api/teams";
 import { useAuth } from "@/providers/auth-provider";
@@ -60,6 +63,14 @@ export function MyTeamPage() {
   // Copy Invite Code Logic
   const [copied, setCopied] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Leave Team Logic
+  const [isLeaveOpen, setIsLeaveOpen] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+
+  // Delete Team Logic
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const copyCode = () => {
     if (team?.invite_code) {
@@ -98,6 +109,39 @@ export function MyTeamPage() {
       toast.error("Falha ao transferir liderança");
     } finally {
       setIsTransferring(false);
+    }
+  };
+
+  const handleLeaveTeam = async () => {
+    setIsLeaving(true);
+    try {
+      await leaveTeamAPI();
+      toast.success("Você saiu do time");
+      setIsLeaveOpen(false);
+      // Reload to show "no team" state
+      window.location.reload();
+    } catch (error: any) {
+      console.error("Failed to leave team", error);
+      toast.error(error.message || "Falha ao sair do time");
+    } finally {
+      setIsLeaving(false);
+    }
+  };
+
+  const handleDeleteTeam = async () => {
+    if (!team) return;
+    setIsDeleting(true);
+    try {
+      await deleteTeamAPI();
+      toast.success("Time excluído com sucesso");
+      setIsDeleteOpen(false);
+      // Reload to show "no team" state
+      window.location.reload();
+    } catch (error: any) {
+      console.error("Failed to delete team", error);
+      toast.error(error.message || "Falha ao excluir time");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -454,6 +498,178 @@ export function MyTeamPage() {
                   </DialogContent>
                 </Dialog>
               </div>
+
+              {/* Leave Team Section */}
+              <div className="rounded-xl border border-white/10 bg-zinc-900/30 p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center">
+                    <LogOut className="h-5 w-5 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold text-lg">
+                      Sair do Time
+                    </h3>
+                    <p className="text-zinc-400 text-sm">
+                      Deixe sua equipe atual e fique livre para entrar em outra.
+                    </p>
+                  </div>
+                </div>
+
+                {isCaptain ? (
+                  <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 text-sm text-yellow-200">
+                    <p className="font-bold flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4" /> Ação bloqueada
+                    </p>
+                    <p className="mt-1 opacity-90">
+                      Como capitão, você precisa transferir a liderança para outro
+                      membro antes de poder sair do time.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-4 mb-6 text-sm text-orange-200">
+                      <p className="font-bold flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4" /> Aviso
+                      </p>
+                      <p className="mt-1 opacity-90">
+                        Você será removido do time e perderá acesso a todos os torneios
+                        em andamento. Esta ação não pode ser desfeita.
+                      </p>
+                    </div>
+
+                    <Dialog open={isLeaveOpen} onOpenChange={setIsLeaveOpen}>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full sm:w-auto border-orange-500/50 text-orange-400 hover:bg-orange-500/10 hover:text-orange-300"
+                        >
+                          <LogOut className="mr-2 h-4 w-4" />
+                          Sair do Time
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="bg-zinc-950 border-white/10 text-white">
+                        <DialogHeader>
+                          <DialogTitle>Confirmar Saída do Time</DialogTitle>
+                          <DialogDescription className="text-zinc-400">
+                            Você tem certeza que deseja sair de <strong className="text-white">{team.name}</strong>?
+                            Esta ação não pode ser desfeita.
+                          </DialogDescription>
+                        </DialogHeader>
+
+                        <DialogFooter>
+                          <Button
+                            variant="ghost"
+                            onClick={() => setIsLeaveOpen(false)}
+                            className="text-zinc-400 hover:text-white"
+                          >
+                            Cancelar
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            onClick={handleLeaveTeam}
+                            disabled={isLeaving}
+                            className="bg-orange-600 hover:bg-orange-700"
+                          >
+                            {isLeaving ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                                Saindo...
+                              </>
+                            ) : (
+                              "Confirmar Saída"
+                            )}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </>
+                )}
+              </div>
+
+              {/* Delete Team Section - Captain Only */}
+              {isCaptain && (
+                <div className="rounded-xl border border-red-500/20 bg-red-950/20 p-6">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                      <Trash2 className="h-5 w-5 text-red-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-bold text-lg">
+                        Excluir Time
+                      </h3>
+                      <p className="text-zinc-400 text-sm">
+                        Exclua permanentemente o time e todos os dados associados.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-6 text-sm text-red-200">
+                    <p className="font-bold flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4" /> Zona de Perigo
+                    </p>
+                    <p className="mt-1 opacity-90">
+                      Esta ação é irreversível. O time será desativado e todos os membros
+                      serão removidos. O histórico será preservado para referência em
+                      torneios passados.
+                    </p>
+                  </div>
+
+                  <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="destructive"
+                        className="w-full sm:w-auto bg-red-600 hover:bg-red-700"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Excluir Time
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-zinc-950 border-white/10 text-white">
+                      <DialogHeader>
+                        <DialogTitle className="text-red-400">Excluir Time Permanentemente</DialogTitle>
+                        <DialogDescription className="text-zinc-400">
+                          Você tem certeza que deseja excluir <strong className="text-white">{team.name}</strong>?
+                          Esta ação não pode ser desfeita.
+                        </DialogDescription>
+                      </DialogHeader>
+
+                      <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 my-4 text-sm text-red-200">
+                        <ul className="list-disc list-inside space-y-1">
+                          <li>Todos os membros serão removidos do time</li>
+                          <li>Inscrições pendentes serão canceladas</li>
+                          <li>O código de convite será invalidado</li>
+                          <li>Histórico será preservado para torneios passados</li>
+                        </ul>
+                      </div>
+
+                      <DialogFooter>
+                        <Button
+                          variant="ghost"
+                          onClick={() => setIsDeleteOpen(false)}
+                          className="text-zinc-400 hover:text-white"
+                        >
+                          Cancelar
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={handleDeleteTeam}
+                          disabled={isDeleting}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          {isDeleting ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                              Excluindo...
+                            </>
+                          ) : (
+                            "Confirmar Exclusão"
+                          )}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              )}
             </div>
           </div>
         </TabsContent>

@@ -28,6 +28,7 @@ import { AdminTournamentsPage } from "./pages/dashboard/admin/manage-tournaments
 import { AdminTournamentDetailPage } from "./pages/dashboard/admin/manage-tournaments-detail";
 import { UserManagementPage } from "./pages/dashboard/admin/user-management";
 import { SystemSettingsPage } from "./pages/dashboard/admin/system-settings";
+import { ActivityLogsPage } from "./pages/dashboard/admin/activity-logs";
 
 // Public Components
 import { HistoryPage } from "./pages/public/history-page";
@@ -115,6 +116,7 @@ function App() {
                     element={<AdminTournamentDetailPage />}
                   />
                   <Route path="users" element={<UserManagementPage />} />
+                  <Route path="logs" element={<ActivityLogsPage />} />
                   <Route path="settings" element={<SystemSettingsPage />} />
                 </Route>
               </Route>

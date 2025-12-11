@@ -8,6 +8,7 @@ import {
   LogOut,
   ShieldAlert,
   Sliders,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,11 @@ const adminItems = [
     icon: Trophy,
   },
   { title: "Gerenciar Usuários", href: "/dashboard/admin/users", icon: Users },
+  {
+    title: "Logs de Atividade",
+    href: "/dashboard/admin/logs",
+    icon: FileText,
+  },
   {
     title: "Configurações do Sistema",
     href: "/dashboard/admin/settings",

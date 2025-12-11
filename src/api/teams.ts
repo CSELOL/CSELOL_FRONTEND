@@ -131,3 +131,37 @@ export async function getMyTeamTournamentsAPI() {
   if (!res.ok) throw new Error("Failed to fetch team tournaments");
   return res.json();
 }
+
+export async function leaveTeamAPI() {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_URL}/teams/leave`, {
+    method: "POST",
+    headers,
+  });
+
+  if (res.status === 400) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Cannot leave team");
+  }
+  if (res.status === 403) throw new Error("Captains must transfer ownership before leaving");
+  if (!res.ok) throw new Error("Failed to leave team");
+
+  return res.json();
+}
+
+export async function deleteTeamAPI() {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_URL}/teams/my-team`, {
+    method: "DELETE",
+    headers,
+  });
+
+  if (res.status === 403) throw new Error("Only the captain can delete the team");
+  if (res.status === 400) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Cannot delete team");
+  }
+  if (!res.ok) throw new Error("Failed to delete team");
+
+  return res.json();
+}

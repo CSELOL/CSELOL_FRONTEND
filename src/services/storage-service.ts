@@ -9,18 +9,13 @@ const getAuthHeaders = async () => {
   };
 };
 
-// --- GENERIC LOCAL UPLOAD FUNCTION ---
-async function uploadToBackend(file: File, folderType: 'team' | 'tournament'): Promise<string> {
+// --- TEAM LOGO UPLOAD ---
+async function uploadTeamLogo(file: File): Promise<string> {
   const formData = new FormData();
-
-  // 1. APPEND 'TYPE' FIRST (Crucial for Backend to see it)
-  formData.append('type', folderType);
-
-  // 2. APPEND 'FILE' SECOND
   formData.append('file', file);
 
   const headers = await getAuthHeaders();
-  const res = await fetch(`${API_URL}/files/upload`, {
+  const res = await fetch(`${API_URL}/files/team-logo`, {
     method: 'POST',
     headers,
     body: formData
@@ -28,7 +23,28 @@ async function uploadToBackend(file: File, folderType: 'team' | 'tournament'): P
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: "Upload failed" }));
-    throw new Error(err.error || "Failed to upload file");
+    throw new Error(err.error || "Failed to upload team logo");
+  }
+
+  const data = await res.json();
+  return data.url;
+}
+
+// --- TOURNAMENT ASSET UPLOAD ---
+async function uploadTournamentAssetToBackend(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_URL}/files/tournament-asset`, {
+    method: 'POST',
+    headers,
+    body: formData
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: "Upload failed" }));
+    throw new Error(err.error || "Failed to upload tournament asset");
   }
 
   const data = await res.json();
@@ -42,7 +58,7 @@ export async function uploadLogo(file: File): Promise<string> {
   if (!file.type.startsWith("image/")) {
     throw new Error("Only image files are allowed.");
   }
-  return uploadToBackend(file, 'team');
+  return uploadTeamLogo(file);
 }
 
 /**
@@ -52,7 +68,7 @@ export async function uploadTournamentAsset(file: File, _type: 'banner' | 'logo'
   if (!file.type.startsWith("image/")) {
     throw new Error("Only image files are allowed.");
   }
-  return uploadToBackend(file, 'tournament');
+  return uploadTournamentAssetToBackend(file);
 }
 
 /**
